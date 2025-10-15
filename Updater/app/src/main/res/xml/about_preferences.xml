@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="@string/developer">
+
+        <com.lich.updater.UI.About.ImagePreference
+            android:key="@string/demon"
+            android:title="@string/demon"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/oui_project">
+
+        <com.lich.updater.UI.About.ImagePreference
+            android:key="@string/yanndroid"
+            android:title="@string/yanndroid"/>
+
+        <com.lich.updater.UI.About.ImagePreference
+            android:key="@string/salvo"
+            android:title="@string/salvo"/>
+
+        <com.lich.updater.UI.About.ImagePreference
+            android:key="@string/tribalfs"
+            android:title="@string/tribalfs"/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

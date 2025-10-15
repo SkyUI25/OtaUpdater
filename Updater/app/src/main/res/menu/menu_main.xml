@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="AppCompatResource,HardcodedText,AlwaysShowAction">
+
+    <item
+        android:id="@+id/menu_search"
+        android:icon="@drawable/oui_des_ic_ab_search"
+        app:iconTint="?actionMenuTextColor"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/menu_settings"
+        android:title="@string/settings_option"
+        app:showAsAction="never"
+        app:iconTint="?actionMenuTextColor" />
+
+</menu>
+
+

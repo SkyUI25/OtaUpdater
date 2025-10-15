@@ -1,0 +1,110 @@
+package com.lich.updater.UI.About
+
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import android.util.Log
+import androidx.core.net.toUri
+import androidx.preference.PreferenceFragmentCompat
+import com.lich.updater.BuildPropReader
+import com.lich.updater.R
+
+class AboutPreferenceFragment : PreferenceFragmentCompat() {
+    
+    private lateinit var buildPropReader: BuildPropReader
+    private lateinit var avatarLoader: GitHubAvatarLoader
+    
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        setPreferencesFromResource(R.xml.about_preferences, rootKey)
+        
+        // Initialize BuildPropReader
+        buildPropReader = BuildPropReader(requireContext())
+        
+        // Initialize GitHub Avatar Loader
+        avatarLoader = GitHubAvatarLoader(requireContext())
+        
+        // Update preference summaries with current device info
+        updatePreferenceSummaries()
+        
+        // Setup click listeners for developer preferences
+        setupDeveloperClickListeners()
+        
+        // Setup developer avatars
+        setupDeveloperAvatars()
+    }
+    
+    private fun updatePreferenceSummaries() {
+        // Update OneUI version
+        findPreference<androidx.preference.Preference>(getString(R.string.oneui_version))?.summary = 
+            buildPropReader.getOneUIVersion()
+        
+        // Update LichUI version
+        findPreference<androidx.preference.Preference>(getString(R.string.lichui_version))?.summary = 
+            buildPropReader.getLichUIVersion()
+        
+        // Update build date
+        findPreference<androidx.preference.Preference>(getString(R.string.build_date))?.summary = 
+            buildPropReader.getBuildDate()
+    }
+    
+    private fun setupDeveloperClickListeners() {
+        // MrDemon-LICH
+        findPreference<androidx.preference.Preference>(getString(R.string.demon))?.setOnPreferenceClickListener {
+            openUrl("https://github.com/MrDemon-LICH")
+            true
+        }
+        
+        // Yanndroid
+        findPreference<androidx.preference.Preference>(getString(R.string.yanndroid))?.setOnPreferenceClickListener {
+            openUrl("https://github.com/Yanndroid")
+            true
+        }
+        
+        // Salvo Giangreco
+        findPreference<androidx.preference.Preference>(getString(R.string.salvo))?.setOnPreferenceClickListener {
+            openUrl("https://github.com/salvogiangri")
+            true
+        }
+        
+        // Tribalfs
+        findPreference<androidx.preference.Preference>(getString(R.string.tribalfs))?.setOnPreferenceClickListener {
+            openUrl("https://github.com/tribalfs")
+            true
+        }
+    }
+    
+    private fun setupDeveloperAvatars() {
+        // MrDemon-LICH
+        findPreference<ImagePreference>(getString(R.string.demon))?.apply {
+            setAvatarLoader(avatarLoader)
+            setUsername("MrDemon-LICH")
+        }
+        
+        // Yanndroid
+        findPreference<ImagePreference>(getString(R.string.yanndroid))?.apply {
+            setAvatarLoader(avatarLoader)
+            setUsername("Yanndroid")
+        }
+        
+        // Salvo Giangreco
+        findPreference<ImagePreference>(getString(R.string.salvo))?.apply {
+            setAvatarLoader(avatarLoader)
+            setUsername("salvogiangri")
+        }
+        
+        // Tribalfs
+        findPreference<ImagePreference>(getString(R.string.tribalfs))?.apply {
+            setAvatarLoader(avatarLoader)
+            setUsername("tribalfs")
+        }
+    }
+    
+    private fun openUrl(urlString: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(urlString))
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("openUrl", e.message.toString())
+        }
+    }
+}

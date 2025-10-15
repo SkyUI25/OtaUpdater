@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory>
+        <com.lich.updater.ui.preference.NewVersionKeyValuePreference
+            android:key="new_version_info"
+            android:title=""
+            android:selectable="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory>
+
+        <Preference
+            android:key="changelog_content"
+            android:title=""
+            android:summary="@string/loading_changelog"
+            android:selectable="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
+
+

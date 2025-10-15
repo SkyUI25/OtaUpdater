@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dev.oneuiproject.oneui.layout.ToolbarLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:expanded="false"
+    app:drawerBackAnimation="true"
+    app:title="@string/updater_title"
+    app:navigationIcon="@drawable/ic_oui_back"
+    tools:isOpen="false"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_location="main_content">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/nsv"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:overScrollMode="always"
+            android:scrollbars="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="10dp">
+
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/lottie_rom_update"
+                    android:layout_width="match_parent"
+                    android:layout_height="130dp"
+                    android:layout_margin="0dp"
+                    android:contentDescription="ROM Update Animation"
+                    android:scaleType="centerInside"
+                    android:visibility="gone"
+                    app:lottie_autoPlay="false"
+                    app:lottie_loop="false"
+                    app:lottie_rawRes="@raw/rom_is_update" />
+
+                <androidx.appcompat.widget.SeslProgressBar
+                    android:id="@+id/progress_bar_manifest"
+                    style="@style/Widget.AppCompat.ProgressBar.Large"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp"
+                    android:indeterminate="true"
+                    android:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/text_below_gif"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp"
+                    android:text="@string/unknown"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/oui_des_appinfolayout_app_label_text_color"
+                    android:visibility="gone"/>
+
+                <androidx.fragment.app.FragmentContainerView
+                    android:id="@+id/nav_host_main"
+                    android:name="com.lich.updater.SettingsFragment"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
+
+                
+            </LinearLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+        <LinearLayout
+            android:id="@+id/download_progress_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <androidx.appcompat.widget.SeslProgressBar
+                android:id="@+id/progress_bar_download"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:indeterminate="false"
+                android:progress="0" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="6dp">
+
+                <TextView
+                    android:id="@+id/text_time_remaining"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="time remaining: 00:00:00" />
+
+                <TextView
+                    android:id="@+id/text_download_percent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0%" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/button_download"
+            android:theme="@style/OneUI.ContainedPrimaryColorButtonTheme"
+            style="@style/OneUI.ContainedButton"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="@string/download" />
+
+    </LinearLayout>
+
+</dev.oneuiproject.oneui.layout.ToolbarLayout>
