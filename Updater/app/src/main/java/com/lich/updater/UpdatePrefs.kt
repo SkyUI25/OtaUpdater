@@ -100,12 +100,13 @@ class UpdatePrefs(context: Context) {
 	fun isNotificationPermissionGranted(): Boolean = prefs.getBoolean(KEY_NOTIF_GRANTED, false)
 
 	// MD5 verification state
-	fun setMd5State(active: Boolean, percent: Int = 0) {
+	fun setMd5State(active: Boolean, percent: Int = 0, path: String? = null) {
 		prefs.edit()
 			.putBoolean(KEY_MD5_ACTIVE, active)
 			.putInt(KEY_MD5_PERCENT, percent)
 			.putString(KEY_MD5_STATUS, if (active) MD5_STATUS_ACTIVE else MD5_STATUS_NONE)
 			.apply()
+		path?.let { prefs.edit().putString(KEY_MD5_PATH, it).apply() }
 	}
 
 	fun setMd5Result(status: String, percent: Int = 100) {
@@ -119,11 +120,13 @@ class UpdatePrefs(context: Context) {
 	fun getMd5Status(): String = prefs.getString(KEY_MD5_STATUS, MD5_STATUS_NONE) ?: MD5_STATUS_NONE
 	fun isMd5Active(): Boolean = prefs.getBoolean(KEY_MD5_ACTIVE, false)
 	fun getMd5Percent(): Int = prefs.getInt(KEY_MD5_PERCENT, 0)
+	fun getMd5Path(): String? = prefs.getString(KEY_MD5_PATH, null)
 	fun clearMd5State() {
 		prefs.edit()
 			.putBoolean(KEY_MD5_ACTIVE, false)
 			.putString(KEY_MD5_STATUS, MD5_STATUS_NONE)
 			.remove(KEY_MD5_PERCENT)
+			.remove(KEY_MD5_PATH)
 			.apply()
 	}
 
@@ -160,6 +163,7 @@ class UpdatePrefs(context: Context) {
 		private const val KEY_MD5_ACTIVE = "md5_active"
 		private const val KEY_MD5_PERCENT = "md5_percent"
 		private const val KEY_MD5_STATUS = "md5_status"
+		private const val KEY_MD5_PATH = "md5_path"
 		private const val KEY_INSTALL_STATUS = "install_status"
 		private const val KEY_INSTALL_FILE_PATH = "install_file_path"
 		private const val KEY_USE_MOBILE_DATA = "use_mobile_data"

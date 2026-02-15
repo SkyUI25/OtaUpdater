@@ -24,9 +24,11 @@
     <string name="loading_changelog">Loading changelog...</string>
     <!-- Download -->
     <string name="download">Download</string>
-    <string name="downloading_rom">Downloading ROM</string>
+    <string name="downloading_rom">Downloading update…</string>
+    <string name="resuming_download">Resuming download…</string>
     <string name="download_progress_channel">Download Progress</string>
     <string name="time_remaining_format">time remaining: %1$02d:%2$02d:%3$02d</string>
+    <string name="downloading">Downloading</string>
     <!-- New strings for error notification -->
     <string name="download_error_channel">Download Errors</string>
     <string name="download_failed_title">Download Failed</string>

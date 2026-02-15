@@ -11,15 +11,22 @@ class Md5Comprobations {
 		file: File,
 		expectedMd5: String,
 		onProgress: (Progress) -> Unit,
-		onResult: (Boolean) -> Unit
+		onResult: (Boolean) -> Unit,
+		shouldCancel: () -> Boolean = { false }
 	) {
 		try {
-			val buffer = ByteArray(1024 * 1024)
+			val buffer = ByteArray(1024 * 1024) // 1MB buffer
 			val total = file.length().coerceAtLeast(1L)
 			var readTotal = 0L
 			val md = MessageDigest.getInstance("MD5")
+			
+			// Use use block to ensure stream is closed
 			FileInputStream(file).use { fis ->
 				while (true) {
+					if (shouldCancel()) {
+						return
+					}
+					
 					val read = fis.read(buffer)
 					if (read == -1) break
 					md.update(buffer, 0, read)
@@ -28,11 +35,18 @@ class Md5Comprobations {
 					onProgress(Progress(percent))
 				}
 			}
+			
+			if (shouldCancel()) {
+				return
+			}
+
 			val digest = md.digest()
 			val actual = digest.joinToString(separator = "") { b -> "%02x".format(b) }
 			onResult(actual.equals(expectedMd5, ignoreCase = true))
 		} catch (_: Exception) {
-			onResult(false)
+			if (!shouldCancel()) {
+				onResult(false)
+			}
 		}
 	}
 }

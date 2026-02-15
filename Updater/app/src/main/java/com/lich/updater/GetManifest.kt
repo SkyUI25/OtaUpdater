@@ -25,7 +25,7 @@ data class ManifestData(
 class GetManifest(private val context: Context) {
     
     companion object {
-        private const val MANIFEST_URL = "https://raw.githubusercontent.com/MrDemon-LICH/PROJECT-LichUI/refs/heads/main/Update/manifest.json"
+        private const val MANIFEST_URL = "https://raw.githubusercontent.com/MrDemonc/PROJECT-LichUI/refs/heads/main/Update/manifest.json"
     }
     
     suspend fun fetchManifestData(): ManifestData? = withContext(Dispatchers.IO) {

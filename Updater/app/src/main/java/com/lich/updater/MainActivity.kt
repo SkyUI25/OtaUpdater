@@ -41,6 +41,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var installNotification: InstallNotification
     private var initialStateApplied = false
     private var allowFetchChangelog = true
+    private var dotsJob: kotlinx.coroutines.Job? = null
+    private var currentDotsBaseText: String? = null
+    private var revealAnimator: android.animation.ValueAnimator? = null
 
     private val requestNotifPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         updatePrefs.setNotificationPermissionAsked(granted)
@@ -187,10 +190,19 @@ class MainActivity : AppCompatActivity() {
             percentText?.text = "$percent%"
             setDownloadButtonCancel(true)
             setDownloadButtonEnabled(true)
+            
+            // Set and play GIF during active download
+            val lottie = findViewById<LottieAnimationView>(R.id.lottie_rom_update)
+            lottie.setAnimation(R.raw.new_update)
+            lottie.playAnimation()
+            
+            // Consolidated dots animation to main status text
+            startDotsAnimation(getString(R.string.downloading))
         } else {
             showDownloadProgress(false)
             setDownloadButtonCancel(false)
             setDownloadButtonEnabled(true)
+            stopDotsAnimation()
         }
     }
 
@@ -208,12 +220,27 @@ class MainActivity : AppCompatActivity() {
                 findViewById<TextView>(R.id.text_download_percent)?.text = "$percent%"
                 findViewById<SeslProgressBar>(R.id.progress_bar_download)?.progress = percent
                 setDownloadButtonEnabled(false)
+                
+                // Set and play GIF during active MD5 verification
+                val lottie = findViewById<LottieAnimationView>(R.id.lottie_rom_update)
+                lottie.setAnimation(R.raw.new_update)
+                lottie.playAnimation()
+                
+                startDotsAnimation(getString(R.string.verifying_md5))
                 return true // MD5 state handled
             }
             UpdatePrefs.MD5_STATUS_SUCCESS -> {
                 android.util.Log.d("MainActivity", "Restoring MD5 success state - showing Install button")
+                revealAnimator?.cancel()
                 showDownloadProgress(false) // Hide progress bar
                 setInstallButton() // Show Install button
+                
+                // Ensure text and GIF reflect "Ready to install"
+                findViewById<TextView>(R.id.text_below_gif)?.text = getString(R.string.install_ready)
+                val lottie = findViewById<LottieAnimationView>(R.id.lottie_rom_update)
+                lottie.setAnimation(R.raw.new_update)
+                lottie.playAnimation()
+                
                 return true // MD5 state handled
             }
             else -> { 
@@ -236,7 +263,15 @@ class MainActivity : AppCompatActivity() {
                 
                 if (installFile?.exists() == true) {
                     android.util.Log.d("MainActivity", "Restoring Install ready state")
+                    revealAnimator?.cancel()
                     setInstallButton()
+                    
+                    // Ensure text and GIF reflect "Ready to install"
+                    findViewById<TextView>(R.id.text_below_gif)?.text = getString(R.string.install_ready)
+                    val lottie = findViewById<LottieAnimationView>(R.id.lottie_rom_update)
+                    lottie.setAnimation(R.raw.new_update)
+                    lottie.playAnimation()
+                    
                     return true // Install state handled
                 } else {
                     android.util.Log.d("MainActivity", "Install file not found, clearing install state")
@@ -286,9 +321,13 @@ class MainActivity : AppCompatActivity() {
                     progressBar?.progress = percent
                     timeRemainingText?.text = eta
                     percentText?.text = "$percent%"
-                    updatePrefs.saveDownloadState(true, percent, eta)
+                    // updatePrefs.saveDownloadState(...) is now handled by the Service
                     setDownloadButtonCancel(true)
                     setDownloadButtonEnabled(true)
+                    // Ensure progress bar is visible during active download broadcast
+                    showDownloadProgress(true)
+                    // Use stripped string for dots animation
+                    startDotsAnimation(getString(R.string.downloading).replace("…", ""))
                 }
                 DownloadForegroundService.ACTION_MD5_PROGRESS -> {
                     findViewById<TextView>(R.id.text_time_remaining)?.text = getString(R.string.verifying_md5)
@@ -296,6 +335,7 @@ class MainActivity : AppCompatActivity() {
                     findViewById<SeslProgressBar>(R.id.progress_bar_download)?.progress = p
                     findViewById<TextView>(R.id.text_download_percent)?.text = "$p%"
                     setDownloadButtonEnabled(false)
+                    startDotsAnimation(getString(R.string.verifying_md5).replace("…", ""))
                 }
                 DownloadForegroundService.ACTION_MD5_SUCCESS -> {
                     updatePrefs.setMd5Result(UpdatePrefs.MD5_STATUS_SUCCESS, 100)
@@ -306,6 +346,15 @@ class MainActivity : AppCompatActivity() {
                     }
                     showDownloadProgress(false) // Hide progress bar
                     setInstallButton() // Show Install button
+                    stopDotsAnimation()
+                    
+                    // Show "Ready for installation" state with animation
+                    val statusView = findViewById<TextView>(R.id.text_below_gif)
+                    animateTextReveal(statusView, getString(R.string.install_ready))
+                    
+                    val lottie = findViewById<LottieAnimationView>(R.id.lottie_rom_update)
+                    lottie.setAnimation(R.raw.new_update)
+                    lottie.playAnimation()
                 }
                 DownloadForegroundService.ACTION_MD5_FAILED -> {
                     findViewById<TextView>(R.id.text_time_remaining)?.text = getString(R.string.md5_verified_failed)
@@ -315,12 +364,20 @@ class MainActivity : AppCompatActivity() {
                     // Do not persist failed state; enable button
                     updatePrefs.clearMd5State()
                     setDownloadButtonEnabled(true)
+                    stopDotsAnimation()
+                    animateTextReveal(findViewById(R.id.text_below_gif), getString(R.string.md5_verified_failed))
                 }
                 DownloadForegroundService.ACTION_COMPLETE -> {
                     showDownloadProgress(false)
                     updatePrefs.clearDownload()
                     setDownloadButtonCancel(false)
                     setDownloadButtonEnabled(true)
+                    stopDotsAnimation()
+                    
+                    // Only update UI if not currently in MD5 or Install ready state
+                    if (!updatePrefs.isMd5Active() && !updatePrefs.isInstallReady()) {
+                        updateUIForComparison(DateComparisonResult.UP_TO_DATE)
+                    }
                 }
                 DownloadForegroundService.ACTION_FAILED -> {
                     showDownloadProgress(false)
@@ -328,6 +385,14 @@ class MainActivity : AppCompatActivity() {
                     android.widget.Toast.makeText(this@MainActivity, "Download failed", android.widget.Toast.LENGTH_SHORT).show()
                     setDownloadButtonCancel(false)
                     setDownloadButtonEnabled(true)
+                    stopDotsAnimation()
+                    
+                    val manifest = updatePrefs.getSavedManifestData()
+                    if (manifest != null) {
+                        updateUIForComparison(DateComparisonResult.UPDATE_AVAILABLE, manifest)
+                    } else {
+                        updateUIForComparison(DateComparisonResult.UNKNOWN)
+                    }
                 }
                 DownloadForegroundService.ACTION_CANCELED -> {
                     showDownloadProgress(false)
@@ -335,6 +400,14 @@ class MainActivity : AppCompatActivity() {
                     android.widget.Toast.makeText(this@MainActivity, "Download canceled", android.widget.Toast.LENGTH_SHORT).show()
                     setDownloadButtonCancel(false)
                     setDownloadButtonEnabled(true)
+                    stopDotsAnimation()
+                    
+                    val manifest = updatePrefs.getSavedManifestData()
+                    if (manifest != null) {
+                        updateUIForComparison(DateComparisonResult.UPDATE_AVAILABLE, manifest)
+                    } else {
+                        updateUIForComparison(DateComparisonResult.UNKNOWN)
+                    }
                 }
             }
         }
@@ -406,57 +479,13 @@ class MainActivity : AppCompatActivity() {
         
         // Show preferences again
         showPreferences()
-        
+
+        // 1. Initial Preference Switching & Basic GIF setup
         when (result) {
-            DateComparisonResult.UP_TO_DATE -> {
-                textView.text = getString(R.string.rom_up_to_date)
-                // Keep current GIF (rom_is_update) and play it
-                lottieAnimationView.setAnimation(R.raw.rom_is_update)
-                lottieAnimationView.playAnimation()
-                // Show current version preferences
-                switchToCurrentVersionPreferences()
-                // Hide download button and changelog
-                showDownloadButton(false)
-                hideChangelog()
-            }
             DateComparisonResult.UPDATE_AVAILABLE -> {
-                textView.text = getString(R.string.new_update_available)
-                // Change to new_update GIF and play it
+                switchToNewVersionPreferences(manifestData)
                 lottieAnimationView.setAnimation(R.raw.new_update)
                 lottieAnimationView.playAnimation()
-                // Show new version preferences with manifest data
-                switchToNewVersionPreferences(manifestData)
-                
-                // Verify bootloader compatibility before showing download button
-                if (manifestData != null) {
-                    val bootloaderVerify = com.lich.updater.bootloader.BootloaderVerify(this)
-                    val bootloaderResult = bootloaderVerify.verifyBootloaderCompatibility(manifestData)
-                    
-                    when (bootloaderResult) {
-                        com.lich.updater.bootloader.BootloaderVerificationResult.COMPATIBLE -> {
-                            // Bootloader is compatible, show normal download button
-                            showDownloadButton(true)
-                            setDownloadButtonCancel(updatePrefs.isDownloadActive())
-                        }
-                        com.lich.updater.bootloader.BootloaderVerificationResult.INCOMPATIBLE -> {
-                            // Bootloader is incompatible, show "Update bootloader" button (disabled)
-                            showDownloadButton(true)
-                            setDownloadButtonText("Update bootloader")
-                            setDownloadButtonEnabled(false)
-                            // Save the bootloader incompatible state
-                            updatePrefs.saveBootloaderIncompatible(true)
-                        }
-                        com.lich.updater.bootloader.BootloaderVerificationResult.UNKNOWN -> {
-                            // Unknown state, show normal download button as fallback
-                            showDownloadButton(true)
-                            setDownloadButtonCancel(updatePrefs.isDownloadActive())
-                        }
-                    }
-                } else {
-                    // No manifest data, show normal download button
-                    showDownloadButton(true)
-                    setDownloadButtonCancel(updatePrefs.isDownloadActive())
-                }
                 
                 // Show changelog (from saved prefs if restoring, else fetch)
                 if (allowFetchChangelog) {
@@ -464,34 +493,92 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     val savedChangelog = updatePrefs.getSavedChangelog()
                     if (savedChangelog.isNullOrEmpty()) {
-                        // No saved changelog yet; fetch once to populate
                         showChangelog()
                     } else {
                         getSettingsFragment()?.updateChangelogPreference(savedChangelog)
                     }
                 }
             }
-            DateComparisonResult.UNKNOWN -> {
-                textView.text = getString(R.string.unknown)
-                // Keep current GIF (rom_is_update) and play it
+            DateComparisonResult.UP_TO_DATE -> {
+                switchToCurrentVersionPreferences()
                 lottieAnimationView.setAnimation(R.raw.rom_is_update)
                 lottieAnimationView.playAnimation()
-                // Show current version preferences
+                hideChangelog()
+            }
+            DateComparisonResult.UNKNOWN -> {
                 switchToCurrentVersionPreferences()
-                // Hide download button and changelog
-                showDownloadButton(false)
+                lottieAnimationView.setAnimation(R.raw.rom_is_update)
+                lottieAnimationView.playAnimation()
                 hideChangelog()
             }
             DateComparisonResult.NO_INTERNET -> {
-                textView.text = getString(R.string.internet_not_available)
-                // Change to error GIF and play it
+                switchToCurrentVersionPreferences()
                 lottieAnimationView.setAnimation(R.raw.error)
                 lottieAnimationView.playAnimation()
-                // Show current version preferences
-                switchToCurrentVersionPreferences()
-                // Hide download button and changelog
-                showDownloadButton(false)
                 hideChangelog()
+            }
+        }
+
+        // 2. State Protection Guards (Only for main status text and specific buttons)
+        val md5Status = updatePrefs.getMd5Status()
+        val installStatus = updatePrefs.getInstallStatus()
+        val isDownloading = updatePrefs.isDownloadActive()
+
+        if (result == DateComparisonResult.UPDATE_AVAILABLE) {
+            if (md5Status == UpdatePrefs.MD5_STATUS_SUCCESS || installStatus == UpdatePrefs.INSTALL_STATUS_READY) {
+                // If already verified or ready to install, show "Ready" state
+                animateTextReveal(textView, getString(R.string.install_ready))
+                showDownloadButton(true)
+                setInstallButton()
+                return
+            } else if (isDownloading || md5Status == UpdatePrefs.MD5_STATUS_ACTIVE) {
+                 // If actively downloading/verifying, let those handlers manage text/Dots
+                 showDownloadButton(true)
+                 return
+            }
+        }
+        
+        // 3. Final Text Reveal and specific button logic
+        when (result) {
+            DateComparisonResult.UP_TO_DATE -> {
+                animateTextReveal(textView, getString(R.string.rom_up_to_date))
+                showDownloadButton(false)
+            }
+            DateComparisonResult.UPDATE_AVAILABLE -> {
+                // Verify bootloader compatibility before showing download button
+                if (manifestData != null) {
+                    val bootloaderVerify = com.lich.updater.bootloader.BootloaderVerify(this)
+                    val bootloaderResult = bootloaderVerify.verifyBootloaderCompatibility(manifestData)
+                    
+                    when (bootloaderResult) {
+                        com.lich.updater.bootloader.BootloaderVerificationResult.COMPATIBLE -> {
+                            showDownloadButton(true)
+                            setDownloadButtonCancel(updatePrefs.isDownloadActive())
+                        }
+                        com.lich.updater.bootloader.BootloaderVerificationResult.INCOMPATIBLE -> {
+                            showDownloadButton(true)
+                            setDownloadButtonText("Update bootloader")
+                            setDownloadButtonEnabled(false)
+                            updatePrefs.saveBootloaderIncompatible(true)
+                        }
+                        com.lich.updater.bootloader.BootloaderVerificationResult.UNKNOWN -> {
+                            showDownloadButton(true)
+                            setDownloadButtonCancel(updatePrefs.isDownloadActive())
+                        }
+                    }
+                } else {
+                    showDownloadButton(true)
+                    setDownloadButtonCancel(updatePrefs.isDownloadActive())
+                }
+                animateTextReveal(textView, getString(R.string.new_update_available))
+            }
+            DateComparisonResult.UNKNOWN -> {
+                animateTextReveal(textView, getString(R.string.unknown))
+                showDownloadButton(false)
+            }
+            DateComparisonResult.NO_INTERNET -> {
+                animateTextReveal(textView, getString(R.string.internet_not_available))
+                showDownloadButton(false)
             }
         }
     }
@@ -636,11 +723,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.button_download)?.visibility = if (show) View.VISIBLE else View.GONE
     }
     
-    private fun showDownloadProgress(show: Boolean) {
+    private    fun showDownloadProgress(show: Boolean) {
         findViewById<View>(R.id.download_progress_container)?.visibility = if (show) View.VISIBLE else View.GONE
-        if (!show) {
-            updatePrefs.clearDownload()
-        }
+        // Removed: updatePrefs.clearDownload() - State cleanup must be explicit (Cancel or Completion)
     }
 
     private fun setDownloadButtonCancel(isCancel: Boolean) {
@@ -764,9 +849,83 @@ class MainActivity : AppCompatActivity() {
     
     private fun startBackgroundUpdateChecker() {
         if (updatePrefs.isUpdateNotificationsEnabled()) {
-            val serviceIntent = Intent(this, BackgroundUpdateChecker::class.java)
-            startService(serviceIntent)
+            UpdatesCheckReceiver.schedule(this)
+        } else {
+            UpdatesCheckReceiver.cancel(this)
         }
+    }
+
+    private fun animateTextReveal(view: TextView, text: String) {
+        val length = text.length
+        if (length == 0) {
+            view.text = ""
+            return
+        }
+
+        view.text = text
+        view.alpha = 1f
+        view.translationX = 0f
+
+        val spannable = android.text.SpannableString(text)
+        val baseColor = view.currentTextColor
+        
+        // Multiplier to create a "sweep" effect where letters overlap their fade cycles
+        val sweepFactor = 5 
+        val animator = android.animation.ValueAnimator.ofInt(0, length * sweepFactor)
+        revealAnimator = animator
+        animator.duration = (length * 30L + 200).coerceAtMost(1000L)
+        animator.addUpdateListener { animation ->
+            val progress = animation.animatedValue as Int
+            for (i in 0 until length) {
+                // Calculate individual alpha for each character based on progress
+                // Character 'i' starts fading when progress reaches (i * sweepFactor)
+                val charProgress = (progress - i * sweepFactor).coerceIn(0, sweepFactor)
+                val alpha = (charProgress * 255 / sweepFactor)
+                
+                spannable.setSpan(
+                    android.text.style.ForegroundColorSpan(androidx.core.graphics.ColorUtils.setAlphaComponent(baseColor, alpha)),
+                    i, i + 1, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+            view.text = spannable
+        }
+        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: android.animation.Animator) {
+                if (revealAnimator == animation) revealAnimator = null
+            }
+        })
+        animator.start()
+    }
+
+    private fun startDotsAnimation(baseText: String) {
+        // Cancel any reveal animation before starting dots (prevents overlapping)
+        revealAnimator?.cancel()
+        revealAnimator = null
+
+        // If the base text is the same, don't restart (prevents stuttering on progress updates)
+        if (dotsJob?.isActive == true && currentDotsBaseText == baseText) return
+        
+        dotsJob?.cancel()
+        currentDotsBaseText = baseText
+        
+        val statusText = findViewById<TextView>(R.id.text_below_gif) ?: return
+        statusText.visibility = View.VISIBLE
+        
+        dotsJob = CoroutineScope(Dispatchers.Main).launch {
+            var dotsCount = 0
+            while (true) {
+                val dotsStr = ".".repeat(dotsCount)
+                statusText.text = "$baseText$dotsStr"
+                dotsCount = (dotsCount + 1) % 4
+                delay(600) // Slightly slower for better readability
+            }
+        }
+    }
+
+    private fun stopDotsAnimation() {
+        dotsJob?.cancel()
+        dotsJob = null
+        currentDotsBaseText = null
     }
 }
 

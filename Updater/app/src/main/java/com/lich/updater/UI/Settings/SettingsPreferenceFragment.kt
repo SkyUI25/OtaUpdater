@@ -4,7 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
-import com.lich.updater.BackgroundUpdateChecker
+
 import com.lich.updater.BuildPropReader
 import com.lich.updater.R
 import com.lich.updater.UpdatePrefs
@@ -77,11 +77,10 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
                 updatePrefs.setUpdateNotificationsEnabled(enabled)
                 
                 // Start or stop background update checker service
-                val serviceIntent = Intent(requireContext(), BackgroundUpdateChecker::class.java)
                 if (enabled) {
-                    requireContext().startService(serviceIntent)
+                    com.lich.updater.UpdatesCheckReceiver.schedule(requireContext())
                 } else {
-                    requireContext().stopService(serviceIntent)
+                    com.lich.updater.UpdatesCheckReceiver.cancel(requireContext())
                 }
                 
                 true

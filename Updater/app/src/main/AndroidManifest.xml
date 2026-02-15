@@ -33,7 +33,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 
@@ -52,9 +52,14 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <service
-            android:name=".BackgroundUpdateChecker"
-            android:exported="false" />
+        <receiver
+             android:name=".UpdatesCheckReceiver"
+             android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                 <action android:name="com.lich.updater.ACTION_CHECK_UPDATES"/>
+             </intent-filter>
+        </receiver>
 
         <receiver
             android:name=".VerifyUpdate.Verify"
