@@ -11,7 +11,7 @@ import java.net.URL
 class ChangelogReader(private val context: Context) {
 
     companion object {
-        private const val CHANGELOG_URL = "https://raw.githubusercontent.com/MrDemon-LICH/PROJECT-LichUI/refs/heads/main/changelog.txt"
+        private const val CHANGELOG_URL = "https://raw.githubusercontent.com/MrDemonc/PROJECT-LichUI/refs/heads/main/changelog.txt"
     }
 
     suspend fun fetchChangelog(): List<String>? = withContext(Dispatchers.IO) {
