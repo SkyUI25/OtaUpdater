@@ -77,7 +77,7 @@ class AboutPreferenceFragment : PreferenceFragmentCompat() {
         // MrDemon-LICH
         findPreference<ImagePreference>(getString(R.string.demon))?.apply {
             setAvatarLoader(avatarLoader)
-            setUsername("MrDemon-LICH")
+            setUsername("MrDemonc")
         }
         
         // Yanndroid
