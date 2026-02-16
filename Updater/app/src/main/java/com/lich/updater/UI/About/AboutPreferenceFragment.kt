@@ -50,7 +50,7 @@ class AboutPreferenceFragment : PreferenceFragmentCompat() {
     private fun setupDeveloperClickListeners() {
         // MrDemon-LICH
         findPreference<androidx.preference.Preference>(getString(R.string.demon))?.setOnPreferenceClickListener {
-            openUrl("https://github.com/MrDemon-LICH")
+            openUrl("https://github.com/MrDemonc")
             true
         }
         
