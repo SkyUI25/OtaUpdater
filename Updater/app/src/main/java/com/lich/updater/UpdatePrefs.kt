@@ -54,6 +54,19 @@ class UpdatePrefs(context: Context) {
 			.remove(KEY_VERSION)
 			.remove(KEY_CHANGELOG)
 			.remove(KEY_BOOTLOADER_INCOMPATIBLE)
+			// Clear MD5 state
+			.remove(KEY_MD5_ACTIVE)
+			.remove(KEY_MD5_PERCENT)
+			.remove(KEY_MD5_STATUS)
+			.remove(KEY_MD5_PATH)
+			// Clear Install state
+			.remove(KEY_INSTALL_STATUS)
+			.remove(KEY_INSTALL_FILE_PATH)
+			// Clear Download state
+			.remove(KEY_DL_ACTIVE)
+			.remove(KEY_DL_PERCENT)
+			.remove(KEY_DL_ETA)
+			.remove(KEY_DL_PATH)
 			.apply()
 	}
 

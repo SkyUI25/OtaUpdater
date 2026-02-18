@@ -98,18 +98,17 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (!initialStateApplied) {
-            applyPersistedUpdateStateOrFetch()
-            initialStateApplied = true
-        }
-
+        
         // Always reconcile UI when returning to the foreground
-        // Check MD5 state first, then install state, then download state
-        if (!reconcileMd5UiFromPrefs()) {
-            if (!reconcileInstallUiFromPrefs()) {
-                reconcileDownloadUiFromPrefs()
+        // This also handles the initial state application
+        if (applyPersistedUpdateStateOrFetch()) {
+            if (!reconcileMd5UiFromPrefs()) {
+                if (!reconcileInstallUiFromPrefs()) {
+                    reconcileDownloadUiFromPrefs()
+                }
             }
         }
+        initialStateApplied = true
         
         // Additional check: if install state exists but file is missing, clear it
         val installStatus = updatePrefs.getInstallStatus()
@@ -141,11 +140,11 @@ class MainActivity : AppCompatActivity() {
         androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).registerReceiver(downloadReceiver, filter)
     }
 
-    private fun applyPersistedUpdateStateOrFetch() {
+    private fun applyPersistedUpdateStateOrFetch(): Boolean {
         // If there is no internet, show NO_INTERNET UI regardless of saved state
         if (!isInternetAvailable()) {
             updateUIForComparison(DateComparisonResult.NO_INTERNET)
-            return
+            return false
         }
         // Check persisted state first: if an update was detected before, validate against current build
         if (updatePrefs.isUpdateAvailable()) {
@@ -157,23 +156,28 @@ class MainActivity : AppCompatActivity() {
                 val comparison = getManifest.compareDates(currentBuildDate, saved.buildDate)
                 if (comparison == DateComparisonResult.UP_TO_DATE) {
                     // Device is now on saved (or newer) build → clear persisted flag and fetch fresh
+                    android.util.Log.d("MainActivity", "Device updated, clearing state")
                     updatePrefs.clearUpdate()
                     allowFetchChangelog = true
                     checkForUpdates()
+                    return false // Don't reconcile with old data
                 } else {
                     // Still older than saved manifest → keep showing update available without fetching
                     allowFetchChangelog = false
                     updateUIForComparison(DateComparisonResult.UPDATE_AVAILABLE, saved)
+                    return true
                 }
             } else {
                 // Missing data; fallback to showing saved state if present
                 allowFetchChangelog = false
                 updateUIForComparison(DateComparisonResult.UPDATE_AVAILABLE, saved)
+                return true
             }
         } else {
             // Preferences are hidden by default in SettingsFragment.onViewCreated()
             allowFetchChangelog = true
             checkForUpdates()
+            return false // Updates will be handled when network fetch completes
         }
     }
 
