@@ -19,10 +19,12 @@ class UpdatesCheckReceiver : BroadcastReceiver() {
         private const val TAG = "UpdatesCheckReceiver"
         private const val ACTION_CHECK_UPDATES = "com.lich.updater.ACTION_CHECK_UPDATES"
         private const val REQUEST_CODE = 0
-        // Check every 12 hours
-        private const val INTERVAL_MS = 12 * 60 * 60 * 1000L
 
         fun schedule(context: Context) {
+            val updatePrefs = UpdatePrefs(context)
+            val intervalHours = updatePrefs.getCheckInterval()
+            val intervalMs = intervalHours * 60 * 60 * 1000L
+            
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, UpdatesCheckReceiver::class.java).apply {
                 action = ACTION_CHECK_UPDATES
@@ -41,12 +43,12 @@ class UpdatesCheckReceiver : BroadcastReceiver() {
             // Use setInexactRepeating for battery efficiency
             alarmManager.setInexactRepeating(
                 AlarmManager.RTC_WAKEUP,
-                System.currentTimeMillis() + INTERVAL_MS,
-                INTERVAL_MS,
+                System.currentTimeMillis() + intervalMs,
+                intervalMs,
                 pendingIntent
             )
             
-            Log.d(TAG, "Scheduled background update check")
+            Log.d(TAG, "Scheduled background update check every $intervalHours hours")
         }
 
         fun cancel(context: Context) {

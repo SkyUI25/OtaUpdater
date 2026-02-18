@@ -169,6 +169,7 @@ class UpdatePrefs(context: Context) {
 		private const val KEY_USE_MOBILE_DATA = "use_mobile_data"
 		private const val KEY_UPDATE_NOTIFICATIONS = "update_notifications"
 		private const val KEY_BOOTLOADER_INCOMPATIBLE = "bootloader_incompatible"
+		private const val KEY_CHECK_INTERVAL = "check_interval"
 	}
 	
 	// Install state management
@@ -227,6 +228,15 @@ class UpdatePrefs(context: Context) {
 			.remove(KEY_BOOTLOADER_INCOMPATIBLE)
 			.apply()
 	}
+
+	// Update check interval (in hours)
+	fun setCheckInterval(hours: Int) {
+		prefs.edit()
+			.putInt(KEY_CHECK_INTERVAL, hours)
+			.apply()
+	}
+
+	fun getCheckInterval(): Int = prefs.getInt(KEY_CHECK_INTERVAL, 12) // Default to 12 hours
 }
 
 

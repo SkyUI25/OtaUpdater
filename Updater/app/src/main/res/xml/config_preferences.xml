@@ -3,17 +3,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory android:title="@string/app_setting">
-
-        <SwitchPreference
+        <androidx.preference.SwitchPreferenceCompat
             android:key="@string/data_network"
             android:title="@string/data_network"
             android:summary="@string/data_network_summary" />
 
-        <SwitchPreference
+        <androidx.preference.SeslSwitchPreferenceScreen
             android:key="@string/notifications"
             android:title="@string/notifications"
             android:summary="@string/notifications_summary" />
-
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/app_about">

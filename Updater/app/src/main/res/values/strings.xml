@@ -66,6 +66,10 @@
     <string name="data_network_summary">Use mobile data to download</string>
     <string name="notifications">Notifications</string>
     <string name="notifications_summary">Update available</string>
+    <string name="notification_frequency_title">Frequency</string>
+    <string name="interval_1h">Every 1 hour</string>
+    <string name="interval_1d">Every day</string>
+    <string name="interval_1w">Every week</string>
     <string name="about">About</string>
     <string name="app_about">About</string>
     <string name="about_summary">application information</string>

@@ -172,12 +172,11 @@ class DownloadForegroundService : Service() {
 		val cm = connectivityManager ?: return
 		val cb = object : ConnectivityManager.NetworkCallback() {
 			override fun onLost(network: Network) {
-				if (!wasCanceled) {
+				if (!wasCanceled && updatePrefs.isDownloadActive()) {
 					try { downloader.cancel() } catch (_: Exception) {}
 					// Do NOT delete file on network lost
 					// try { downloader.getLastOutputFile()?.let { if (it.exists()) it.delete() } } catch (_: Exception) {}
 					updatePrefs.clearDownload()
-					updatePrefs.clearMd5State()
 					downloadError.showNetworkFailure()
 					androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this@DownloadForegroundService).sendBroadcast(Intent(ACTION_FAILED))
 					stopForeground(true)
@@ -284,7 +283,14 @@ class DownloadForegroundService : Service() {
 				
 				if (ok) {
 					updatePrefs.setMd5Result(UpdatePrefs.MD5_STATUS_SUCCESS, 100)
+					// PERSIST INSTALL READY STATE: This ensures MainActivity can restore the "Install" button
+					// even if it was in the background when verification finished.
+					updatePrefs.setInstallStatus(UpdatePrefs.INSTALL_STATUS_READY, file.absolutePath)
 					md5Error.cancel()
+					
+					// Show "Ready to install" notification directly from service
+					com.lich.updater.Notifications.InstallNotification(this@DownloadForegroundService).show()
+					
 					androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(Intent(ACTION_MD5_SUCCESS).apply { putExtra(EXTRA_PATH, file.absolutePath) })
 				} else {
 					// clear any md5 persisted state on failure

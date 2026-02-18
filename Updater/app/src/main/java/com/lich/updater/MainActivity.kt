@@ -227,6 +227,8 @@ class MainActivity : AppCompatActivity() {
                 lottie.playAnimation()
                 
                 startDotsAnimation(getString(R.string.verifying_md5))
+                showDownloadButton(true)
+                switchToNewVersionPreferences(updatePrefs.getSavedManifestData())
                 return true // MD5 state handled
             }
             UpdatePrefs.MD5_STATUS_SUCCESS -> {
@@ -234,6 +236,8 @@ class MainActivity : AppCompatActivity() {
                 revealAnimator?.cancel()
                 showDownloadProgress(false) // Hide progress bar
                 setInstallButton() // Show Install button
+                showDownloadButton(true)
+                switchToNewVersionPreferences(updatePrefs.getSavedManifestData())
                 
                 // Ensure text and GIF reflect "Ready to install"
                 findViewById<TextView>(R.id.text_below_gif)?.text = getString(R.string.install_ready)
@@ -265,6 +269,8 @@ class MainActivity : AppCompatActivity() {
                     android.util.Log.d("MainActivity", "Restoring Install ready state")
                     revealAnimator?.cancel()
                     setInstallButton()
+                    showDownloadButton(true)
+                    switchToNewVersionPreferences(updatePrefs.getSavedManifestData())
                     
                     // Ensure text and GIF reflect "Ready to install"
                     findViewById<TextView>(R.id.text_below_gif)?.text = getString(R.string.install_ready)
@@ -287,6 +293,12 @@ class MainActivity : AppCompatActivity() {
                 if (installFile?.exists() == true) {
                     android.util.Log.d("MainActivity", "Restoring Install installing state")
                     setInstallButtonInstalling()
+                    showDownloadButton(true)
+                    switchToNewVersionPreferences(updatePrefs.getSavedManifestData())
+                    
+                    // Set appropriate text for installing state
+                    findViewById<TextView>(R.id.text_below_gif)?.text = getString(R.string.install_generating_script)
+                    
                     return true // Install state handled
                 } else {
                     android.util.Log.d("MainActivity", "Install file not found during installing, clearing install state")
@@ -346,6 +358,8 @@ class MainActivity : AppCompatActivity() {
                     }
                     showDownloadProgress(false) // Hide progress bar
                     setInstallButton() // Show Install button
+                    showDownloadButton(true)
+                    switchToNewVersionPreferences(updatePrefs.getSavedManifestData())
                     stopDotsAnimation()
                     
                     // Show "Ready for installation" state with animation
