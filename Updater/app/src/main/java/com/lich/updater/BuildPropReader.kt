@@ -63,7 +63,7 @@ class BuildPropReader(private val context: Context) {
             // Parse version like "80000" to "8.0"
             val versionInt = version.toInt()
             val major = versionInt / 10000
-            val minor = (versionInt % 10000) / 1000
+            val minor = (versionInt % 10000) / 100
             "$major.$minor"
         } catch (e: NumberFormatException) {
             context.getString(R.string.unknown)

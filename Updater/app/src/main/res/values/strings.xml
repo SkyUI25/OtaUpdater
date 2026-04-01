@@ -17,24 +17,28 @@
     <!-- Update Status -->
     <string name="current_version">Curren Version</string>
     <string name="new_version">New Version</string>
-    <string name="rom_up_to_date">ROM is up to date</string>
+    <string name="rom_up_to_date">Rom is up to date</string>
+    <string name="checking_for_updates">Checking for updates</string>
     <string name="new_update_available">New Update Available</string>
     <string name="internet_not_available">Internet not available</string>
+    <string name="internet_suggestion">Check your network connection and try again</string>
     <!-- Changelog -->
     <string name="loading_changelog">Loading changelog...</string>
     <!-- Download -->
     <string name="download">Download</string>
-    <string name="downloading_rom">Downloading update…</string>
-    <string name="resuming_download">Resuming download…</string>
+    <string name="downloading_rom">Downloading update</string>
+    <string name="resuming_download">Resuming download</string>
     <string name="download_progress_channel">Download Progress</string>
     <string name="time_remaining_format">time remaining: %1$02d:%2$02d:%3$02d</string>
     <string name="downloading">Downloading</string>
+    <string name="download_tip">Please wait for the download to finish</string>
     <!-- New strings for error notification -->
     <string name="download_error_channel">Download Errors</string>
     <string name="download_failed_title">Download Failed</string>
     <string name="download_failed_network">Failed due to network connection</string>
     <!-- MD5 strings -->
     <string name="verifying_md5">Verifying MD5</string>
+    <string name="md5_tip">Verifying file integrity</string>
     <string name="md5_verified_success">MD5 verified successfully</string>
     <string name="md5_verified_failed">MD5 verification failed</string>
     <!-- MD5 progress notification -->
@@ -46,6 +50,7 @@
     <!-- Install -->
     <string name="install">Install</string>
     <string name="install_ready">ROM ready for installation</string>
+    <string name="backup_tip">Tip: back up your important information</string>
     <!-- Install notification -->
     <string name="install_now">Install Now</string>
     <string name="install_notification_channel">Install Notifications</string>

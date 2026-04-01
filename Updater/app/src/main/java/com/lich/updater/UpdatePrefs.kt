@@ -183,7 +183,17 @@ class UpdatePrefs(context: Context) {
 		private const val KEY_UPDATE_NOTIFICATIONS = "update_notifications"
 		private const val KEY_BOOTLOADER_INCOMPATIBLE = "bootloader_incompatible"
 		private const val KEY_CHECK_INTERVAL = "check_interval"
+		private const val KEY_LAST_CHECK_TIME = "last_check_time"
 	}
+	
+	// Last check time management
+	fun saveLastCheckTime(time: String) {
+		prefs.edit()
+			.putString(KEY_LAST_CHECK_TIME, time)
+			.apply()
+	}
+	
+	fun getLastCheckTime(): String? = prefs.getString(KEY_LAST_CHECK_TIME, null)
 	
 	// Install state management
 	fun setInstallStatus(status: String, filePath: String? = null) {

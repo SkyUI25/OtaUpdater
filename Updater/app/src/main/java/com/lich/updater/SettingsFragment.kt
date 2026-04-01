@@ -9,23 +9,31 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuProvider
 import androidx.lifecycle.Lifecycle
 import androidx.preference.PreferenceFragmentCompat
+import com.lich.updater.ui.preference.StatusCardPreference
 import dev.oneuiproject.oneui.layout.ToolbarLayout
+import com.lich.updater.UpdatePrefs
 
 class SettingsFragment : PreferenceFragmentCompat() {
     private var toolbarLayout: ToolbarLayout? = null
     private lateinit var buildPropReader: BuildPropReader
+    private lateinit var updatePrefs: UpdatePrefs
     private var isShowingNewVersion = false
+    private var lastStatusText: String? = null
     
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         // Start with current version preferences
         setPreferencesFromResource(R.xml.settings_preferences, rootKey)
         activity?.title = getString(R.string.updater_title)
         
-        // Initialize BuildPropReader
+        // Initialize BuildPropReader and UpdatePrefs
         buildPropReader = BuildPropReader(requireContext())
+        updatePrefs = UpdatePrefs(requireContext())
         
         // Update preference summaries
         updatePreferenceSummaries()
+        
+        // Restore last status if available
+        lastStatusText?.let { updateStatusText(it) }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -123,10 +131,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
     
     fun updateNewVersionSummariesWithManifest(manifestData: ManifestData) {
         if (isShowingNewVersion) {
-            val kv = findPreference<com.lich.updater.ui.preference.NewVersionKeyValuePreference>("new_version_info")
-            kv?.buildDateValue = manifestData.buildDate
-            kv?.sizeValue = manifestData.size
-            kv?.versionValue = manifestData.version
+            // 1. Move Rom version to the main status card subtitle
+            updateStatusText(getString(R.string.new_update_available), subtitle = "Rom version ${manifestData.version}")
+            
+            // 2. Trigger changelog refresh (it will now include metadata automatically)
+            val currentChangelog = updatePrefs.getSavedChangelog() ?: ""
+            updateChangelogPreference(currentChangelog)
         }
     }
     
@@ -139,16 +149,25 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
     
     fun updateChangelogPreference(changelogText: String) {
-        android.util.Log.d("SettingsFragment", "Updating changelog preference with: $changelogText")
-        val changelogPreference = findPreference<androidx.preference.Preference>("changelog_content")
-        android.util.Log.d("SettingsFragment", "Changelog preference found: $changelogPreference")
-        
-        if (changelogPreference != null) {
-            changelogPreference.summary = changelogText
-            android.util.Log.d("SettingsFragment", "Changelog preference updated successfully")
-        } else {
-            android.util.Log.e("SettingsFragment", "Changelog preference not found!")
+        if (changelogText.isEmpty()) {
+            findPreference<androidx.preference.Preference>("changelog_content")?.summary = ""
+            return
         }
+
+        val manifest = updatePrefs.getSavedManifestData()
+        val formattedContent = if (isShowingNewVersion && manifest != null) {
+            "• Build date: ${manifest.buildDate}\n• Size: ${manifest.size}\n$changelogText"
+        } else {
+            changelogText
+        }
+
+        findPreference<androidx.preference.Preference>("changelog_content")?.summary = formattedContent
+    }
+    
+    fun updateStatusText(text: String, blinking: Boolean = false, subtitle: String = "") {
+        lastStatusText = text
+        val statusPref = findPreference<StatusCardPreference>("pref_update_status")
+        statusPref?.setStatus(text, blinking, subtitle)
     }
 }
 

@@ -1,12 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory>
-        <com.lich.updater.ui.preference.NewVersionKeyValuePreference
-            android:key="new_version_info"
-            android:title=""
-            android:selectable="false" />
+        <com.lich.updater.ui.preference.StatusCardPreference
+            android:key="pref_update_status"
+            android:layout="@layout/preference_status_card" />
     </PreferenceCategory>
 
     <PreferenceCategory>

@@ -79,10 +79,10 @@ dependencies {
     implementation("sesl.androidx.indexscroll:indexscroll:1.0.0+1.0.0-sesl8+rev0")
     implementation("sesl.androidx.preference:preference:1.2.1+1.0.0-sesl8+rev1")
     implementation("sesl.androidx.viewpager2:viewpager2:1.1.0+1.0.0-sesl8+rev0")
-    implementation("sesl.com.google.android.material:material:1.12.0+1.0.32-sesl8+rev2")
+    implementation("sesl.com.google.android.material:material:1.12.0+1.0.32-sesl8+rev3")
 
     // Design
-    implementation("io.github.tribalfs:oneui-design:0.9.1+oneui8")
+    implementation("io.github.tribalfs:oneui-design:0.9.6+oneui8")
 
     // Icons
     implementation("io.github.oneuiproject:icons:1.1.0")
