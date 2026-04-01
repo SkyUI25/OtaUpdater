@@ -40,6 +40,7 @@ dependencyResolutionManagement {
                 password = "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"
             }
         }
+        maven { url = uri("https://jitpack.io") }
     }
 }
 

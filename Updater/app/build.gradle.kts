@@ -99,4 +99,9 @@ dependencies {
 
     // Local broadcasts
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+
+    // Root management
+    implementation("com.github.topjohnwu.libsu:core:5.2.2")
+    implementation("com.github.topjohnwu.libsu:service:5.2.2")
+    implementation("com.github.topjohnwu.libsu:nio:5.2.2")
 }

@@ -85,57 +85,22 @@ class GenerateScript(private val context: Context) {
         }
     }
     
-    /**
-     * Create the recovery directory if it doesn't exist
-     */
     private suspend fun createRecoveryDirectory(): Boolean = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Creating recovery directory: /cache/recovery/")
             
-            // Try using Java File API first since app is in system
-            try {
-                val recoveryDir = File("/cache/recovery")
-                if (!recoveryDir.exists()) {
-                    val created = recoveryDir.mkdirs()
-                    if (created) {
-                        Log.d(TAG, "Directory created successfully using Java File API")
-                        return@withContext true
-                    } else {
-                        Log.w(TAG, "Java File API failed to create directory")
-                    }
-                } else {
-                    Log.d(TAG, "Directory already exists")
-                    return@withContext true
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Java File API failed: ${e.message}")
-            }
+            val rootManager = com.lich.updater.root.RootManager()
             
-            // Fallback to shell commands
-            val commands = arrayOf(
-                "mkdir -p /cache/recovery/",
-                "su -c 'mkdir -p /cache/recovery/'",
-                "su -mm -c 'mkdir -p /cache/recovery/'"
-            )
-            
-            for (command in commands) {
-                try {
-                    Log.d(TAG, "Trying command: $command")
-                    val process = Runtime.getRuntime().exec(command)
-                    val exitCode = process.waitFor()
-                    if (exitCode == 0) {
-                        Log.d(TAG, "Directory created successfully with command: $command")
-                        return@withContext true
-                    } else {
-                        Log.w(TAG, "Command failed with exit code $exitCode: $command")
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Command failed: $command - ${e.message}")
+            // Mejorar los comandos root para usar -mm si es necesario
+            val createDirResult = rootManager.executeCommand("su -mm -c 'mkdir -p /cache/recovery/'")
+            if (!createDirResult.success) {
+                // Intentar sin -mm si falla
+                val altCreateDirResult = rootManager.executeCommand("su -c 'mkdir -p /cache/recovery/'")
+                if (!altCreateDirResult.success) {
+                    throw Exception("Failed to create recovery directory")
                 }
             }
-            
-            Log.e(TAG, "All directory creation methods failed")
-            false
+            return@withContext true
             
         } catch (e: Exception) {
             Log.e(TAG, "Failed to create recovery directory: ${e.message}", e)
@@ -143,61 +108,30 @@ class GenerateScript(private val context: Context) {
         }
     }
     
-    /**
-     * Write the recovery script to the cache
-     */
     private suspend fun writeRecoveryScript(script: String): Boolean = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Writing recovery script to: $SCRIPT_FILE")
             
-            // Try using Java File API first since app is in system
-            try {
-                val scriptFile = File(SCRIPT_FILE)
-                scriptFile.writeText(script)
-                
-                if (scriptFile.exists() && scriptFile.length() > 0) {
-                    Log.d(TAG, "Script written successfully using Java File API: ${scriptFile.length()} bytes")
-                    return@withContext true
-                } else {
-                    Log.w(TAG, "Java File API failed - file doesn't exist or is empty")
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Java File API failed: ${e.message}")
-            }
+            val rootManager = com.lich.updater.root.RootManager()
             
-            // Fallback to shell commands
-            val commands = arrayOf(
-                "echo \"$script\" > $SCRIPT_FILE",
-                "su -c 'echo \"$script\" > $SCRIPT_FILE'",
-                "su -mm -c 'echo \"$script\" > $SCRIPT_FILE'"
-            )
-            
-            for (command in commands) {
-                try {
-                    Log.d(TAG, "Trying command: $command")
-                    val process = Runtime.getRuntime().exec(command)
-                    val exitCode = process.waitFor()
-                    if (exitCode == 0) {
-                        Log.d(TAG, "Script written successfully with command: $command")
-                        
-                        // Verify the script was written
-                        val scriptFile = File(SCRIPT_FILE)
-                        if (scriptFile.exists() && scriptFile.length() > 0) {
-                            Log.d(TAG, "Script verification successful: ${scriptFile.length()} bytes")
-                            return@withContext true
-                        } else {
-                            Log.w(TAG, "Script verification failed - file doesn't exist or is empty")
-                        }
-                    } else {
-                        Log.w(TAG, "Command failed with exit code $exitCode: $command")
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Command failed: $command - ${e.message}")
+            val writeResult = rootManager.executeCommand("su -mm -c 'echo \"$script\" > $SCRIPT_FILE'")
+            if (!writeResult.success) {
+                // Intentar sin -mm si falla
+                val altWriteResult = rootManager.executeCommand("su -c 'echo \"$script\" > $SCRIPT_FILE'")
+                if (!altWriteResult.success) {
+                    throw Exception("Failed to write recovery script")
                 }
             }
             
-            Log.e(TAG, "All script writing methods failed")
-            false
+            // Verify the script was written using root since normal app cannot read /cache/
+            val verifyResult = rootManager.executeCommand("test -s $SCRIPT_FILE")
+            if (verifyResult.success) {
+                Log.d(TAG, "Script verification successful")
+                return@withContext true
+            } else {
+                Log.w(TAG, "Script verification failed - file doesn't exist or is empty")
+                return@withContext false
+            }
             
         } catch (e: Exception) {
             Log.e(TAG, "Failed to write recovery script: ${e.message}", e)
@@ -210,41 +144,29 @@ class GenerateScript(private val context: Context) {
      */
     suspend fun hasRecoveryScript(): Boolean = withContext(Dispatchers.IO) {
         try {
-            val scriptFile = File(SCRIPT_FILE)
-            scriptFile.exists()
+            val rootManager = com.lich.updater.root.RootManager()
+            val result = rootManager.executeCommand("test -f $SCRIPT_FILE")
+            result.success
         } catch (e: Exception) {
             Log.e(TAG, "Failed to check recovery script: ${e.message}", e)
             false
         }
     }
     
-    /**
-     * Delete the recovery script
-     */
     suspend fun deleteRecoveryScript(): Boolean = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Deleting recovery script: $SCRIPT_FILE")
             
-            val commands = arrayOf(
-                "rm -f $SCRIPT_FILE",
-                "su -c 'rm -f $SCRIPT_FILE'",
-                "su -mm -c 'rm -f $SCRIPT_FILE'"
-            )
+            val rootManager = com.lich.updater.root.RootManager()
             
-            for (command in commands) {
-                try {
-                    val process = Runtime.getRuntime().exec(command)
-                    val exitCode = process.waitFor()
-                    if (exitCode == 0) {
-                        Log.d(TAG, "Script deleted successfully with command: $command")
-                        return@withContext true
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Command failed: $command - ${e.message}")
+            val deleteResult = rootManager.executeCommand("su -mm -c 'rm -f $SCRIPT_FILE'")
+            if (!deleteResult.success) {
+                val altDeleteResult = rootManager.executeCommand("su -c 'rm -f $SCRIPT_FILE'")
+                if (!altDeleteResult.success) {
+                    return@withContext false
                 }
             }
-            
-            false
+            return@withContext true
             
         } catch (e: Exception) {
             Log.e(TAG, "Failed to delete recovery script: ${e.message}", e)

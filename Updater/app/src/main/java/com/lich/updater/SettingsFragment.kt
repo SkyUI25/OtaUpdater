@@ -70,7 +70,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     }
                     R.id.menu_search -> {
                         // Trigger manifest check with progress bar
-                        (requireActivity() as MainActivity).checkForUpdatesWithProgress()
+                        val mainActivity = requireActivity() as MainActivity
+                        if (mainActivity.isRooted) {
+                            mainActivity.checkForUpdatesWithProgress()
+                        } else {
+                            android.widget.Toast.makeText(requireContext(), getString(R.string.root_needed_title), android.widget.Toast.LENGTH_SHORT).show()
+                        }
                         true
                     }
                     R.id.menu_settings -> {

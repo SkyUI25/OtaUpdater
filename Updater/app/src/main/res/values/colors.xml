@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="ic_launcher_background">#0381FE</color>
     <color name="primary">@color/white</color>
     <color name="ic_launcher_foreground">@color/primary</color>
-    <color name="window_background_dark">#1A1B1E</color>
 </resources>
