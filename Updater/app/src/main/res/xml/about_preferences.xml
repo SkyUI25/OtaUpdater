@@ -4,25 +4,29 @@
 
     <PreferenceCategory android:title="@string/developer">
 
-        <com.lich.updater.UI.About.ImagePreference
+        <Preference
             android:key="@string/demon"
-            android:title="@string/demon"/>
+            android:title="@string/demon"
+            android:icon="@drawable/avatar_mrdemonc"/>
 
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/oui_project">
 
-        <com.lich.updater.UI.About.ImagePreference
+        <Preference
             android:key="@string/yanndroid"
-            android:title="@string/yanndroid"/>
+            android:title="@string/yanndroid"
+            android:icon="@drawable/avatar_yanndroid"/>
 
-        <com.lich.updater.UI.About.ImagePreference
+        <Preference
             android:key="@string/salvo"
-            android:title="@string/salvo"/>
+            android:title="@string/salvo"
+            android:icon="@drawable/avatar_salvogiangri"/>
 
-        <com.lich.updater.UI.About.ImagePreference
+        <Preference
             android:key="@string/tribalfs"
-            android:title="@string/tribalfs"/>
+            android:title="@string/tribalfs"
+            android:icon="@drawable/avatar_tribalfs"/>
 
     </PreferenceCategory>
 

@@ -12,25 +12,17 @@ import com.lich.updater.R
 class AboutPreferenceFragment : PreferenceFragmentCompat() {
     
     private lateinit var buildPropReader: BuildPropReader
-    private lateinit var avatarLoader: GitHubAvatarLoader
-    
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.about_preferences, rootKey)
         
         // Initialize BuildPropReader
         buildPropReader = BuildPropReader(requireContext())
         
-        // Initialize GitHub Avatar Loader
-        avatarLoader = GitHubAvatarLoader(requireContext())
-        
         // Update preference summaries with current device info
         updatePreferenceSummaries()
         
         // Setup click listeners for developer preferences
         setupDeveloperClickListeners()
-        
-        // Setup developer avatars
-        setupDeveloperAvatars()
     }
     
     private fun updatePreferenceSummaries() {
@@ -70,32 +62,6 @@ class AboutPreferenceFragment : PreferenceFragmentCompat() {
         findPreference<androidx.preference.Preference>(getString(R.string.tribalfs))?.setOnPreferenceClickListener {
             openUrl("https://github.com/tribalfs")
             true
-        }
-    }
-    
-    private fun setupDeveloperAvatars() {
-        // MrDemon-LICH
-        findPreference<ImagePreference>(getString(R.string.demon))?.apply {
-            setAvatarLoader(avatarLoader)
-            setUsername("MrDemonc")
-        }
-        
-        // Yanndroid
-        findPreference<ImagePreference>(getString(R.string.yanndroid))?.apply {
-            setAvatarLoader(avatarLoader)
-            setUsername("Yanndroid")
-        }
-        
-        // Salvo Giangreco
-        findPreference<ImagePreference>(getString(R.string.salvo))?.apply {
-            setAvatarLoader(avatarLoader)
-            setUsername("salvogiangri")
-        }
-        
-        // Tribalfs
-        findPreference<ImagePreference>(getString(R.string.tribalfs))?.apply {
-            setAvatarLoader(avatarLoader)
-            setUsername("tribalfs")
         }
     }
     
