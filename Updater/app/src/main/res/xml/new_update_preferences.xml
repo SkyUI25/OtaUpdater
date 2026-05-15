@@ -13,6 +13,7 @@
             android:key="changelog_content"
             android:title=""
             android:summary="@string/loading_changelog"
+            android:layout="@layout/preference_changelog"
             android:selectable="false" />
 
     </PreferenceCategory>
