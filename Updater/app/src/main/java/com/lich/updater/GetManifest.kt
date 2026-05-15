@@ -19,13 +19,14 @@ data class ManifestData(
     val size: String,
     val bl: String,
     val url: String,
+    val changelogUrl: String,
     val version: String
 )
 
 class GetManifest(private val context: Context) {
     
     companion object {
-        private const val MANIFEST_URL = "https://raw.githubusercontent.com/MrDemonc/PROJECT-LichUI/refs/heads/main/Update/manifest.json"
+        private const val MANIFEST_URL = "https://raw.githubusercontent.com/MrDemonc/PROJECT-LichUI/refs/heads/Updates/devices/manifest.json"
     }
     
     suspend fun fetchManifestData(): ManifestData? = withContext(Dispatchers.IO) {
@@ -62,26 +63,42 @@ class GetManifest(private val context: Context) {
         }
     }
     
+    private fun getDeviceName(): String {
+        return try {
+            val process = Runtime.getRuntime().exec("getprop ro.product.device")
+            val reader = BufferedReader(InputStreamReader(process.inputStream))
+            val output = reader.readLine()?.trim()
+            reader.close()
+            process.waitFor()
+            if (!output.isNullOrBlank()) output else android.os.Build.DEVICE
+        } catch (e: Exception) {
+            android.os.Build.DEVICE
+        }
+    }
+
     private fun parseManifestJson(jsonString: String): ManifestData? {
         return try {
             val jsonObject = JSONObject(jsonString)
             val responseArray = jsonObject.getJSONArray("response")
+            val currentDevice = getDeviceName()
+            android.util.Log.d("GetManifest", "Current device detected as: '$currentDevice'")
             
-            if (responseArray.length() > 0) {
-                val firstItem = responseArray.getJSONObject(0)
-                
-                ManifestData(
-                    buildDate = formatDate(firstItem.getInt("builddate")),
-                    md5 = firstItem.getString("md5"),
-                    patch = formatDate(firstItem.getInt("patch")),
-                    size = formatSize(firstItem.getLong("size")),
-                    bl = firstItem.getString("bl"),
-                    url = firstItem.getString("url"),
-                    version = firstItem.getString("version")
-                )
-            } else {
-                null
+            for (i in 0 until responseArray.length()) {
+                val item = responseArray.getJSONObject(i)
+                if (item.has("device") && item.getString("device") == currentDevice) {
+                    return ManifestData(
+                        buildDate = formatDate(item.getInt("builddate")),
+                        md5 = item.getString("md5"),
+                        patch = formatDate(item.getInt("patch")),
+                        size = formatSize(item.getLong("size")),
+                        bl = item.getString("bl"),
+                        url = item.getString("url"),
+                        changelogUrl = item.getString("changelog"),
+                        version = item.getString("version")
+                    )
+                }
             }
+            null
         } catch (e: Exception) {
             e.printStackTrace()
             null

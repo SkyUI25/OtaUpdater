@@ -826,8 +826,14 @@ class MainActivity : AppCompatActivity() {
     private fun showChangelog() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                android.util.Log.d("MainActivity", "Starting to fetch changelog...")
-                val changelogLines = changelogReader.fetchChangelog()
+                val changelogUrl = updatePrefs.getSavedManifestData()?.changelogUrl
+                if (changelogUrl == null) {
+                    val saved = updatePrefs.getSavedChangelog()
+                    getSettingsFragment()?.updateChangelogPreference(saved ?: getString(R.string.internet_not_available))
+                    return@launch
+                }
+                android.util.Log.d("MainActivity", "Starting to fetch changelog from $changelogUrl...")
+                val changelogLines = changelogReader.fetchChangelog(changelogUrl)
                 android.util.Log.d("MainActivity", "Changelog lines: $changelogLines")
                 
                 if (changelogLines != null && changelogLines.isNotEmpty()) {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="white">#FFFFFFFF</color>
-    <color name="ic_launcher_background">#0381FE</color>
+    <color name="ic_launcher_background">@color/oui_des_appinfolayout_app_label_text_color</color>
     <color name="primary">@color/white</color>
-    <color name="ic_launcher_foreground">@color/primary</color>
+    <color name="ic_launcher_foreground">@color/oui_des_appinfolayout_app_label_text_color</color>
 </resources>

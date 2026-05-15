@@ -71,8 +71,8 @@ dependencies {
     implementation("sesl.androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01+1.0.0-sesl8+rev0")
     implementation("sesl.androidx.fragment:fragment:1.8.9+1.0.5-sesl8+rev1")
     implementation("sesl.androidx.appcompat:appcompat:1.7.1+1.0.21-sesl8+rev8")
-    implementation("sesl.androidx.slidingpanelayout:slidingpanelayout:1.2.0+1.0.4-sesl8+rev0")
-    implementation("sesl.androidx.recyclerview:recyclerview:1.4.0+1.0.12-sesl8+rev2")
+    implementation("sesl.androidx.slidingpanelayout:slidingpanelayout:1.2.0+1.0.4-sesl8+rev1")
+    implementation("sesl.androidx.recyclerview:recyclerview:1.4.0+1.0.12-sesl8+rev3")
     implementation("sesl.androidx.picker:picker-basic:1.0.7+1.0.7-sesl8+rev2")
     implementation("sesl.androidx.picker:picker-app:1.0.6+1.0.6-sesl8+rev0")
     implementation("sesl.androidx.picker:picker-color:1.0.2+1.0.3-sesl8+rev0")
@@ -82,7 +82,7 @@ dependencies {
     implementation("sesl.com.google.android.material:material:1.12.0+1.0.32-sesl8+rev3")
 
     // Design
-    implementation("io.github.tribalfs:oneui-design:0.9.6+oneui8")
+    implementation("io.github.tribalfs:oneui-design:0.9.10+oneui8")
 
     // Icons
     implementation("io.github.oneuiproject:icons:1.1.0")

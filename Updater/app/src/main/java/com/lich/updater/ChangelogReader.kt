@@ -10,13 +10,9 @@ import java.net.URL
 
 class ChangelogReader(private val context: Context) {
 
-    companion object {
-        private const val CHANGELOG_URL = "https://raw.githubusercontent.com/MrDemonc/PROJECT-LichUI/refs/heads/main/changelog.txt"
-    }
-
-    suspend fun fetchChangelog(): List<String>? = withContext(Dispatchers.IO) {
+    suspend fun fetchChangelog(changelogUrl: String): List<String>? = withContext(Dispatchers.IO) {
         try {
-            val url = URL(CHANGELOG_URL)
+            val url = URL(changelogUrl)
             val connection = url.openConnection() as HttpURLConnection
 
             connection.requestMethod = "GET"

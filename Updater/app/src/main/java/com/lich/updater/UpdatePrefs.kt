@@ -18,6 +18,7 @@ class UpdatePrefs(context: Context) {
 			.putString(KEY_SIZE, manifestData.size)
 			.putString(KEY_BOOTLOADER, manifestData.bl)
 			.putString(KEY_URL, manifestData.url)
+			.putString(KEY_CHANGELOG_URL, manifestData.changelogUrl)
 			.putString(KEY_VERSION, manifestData.version)
 			.apply()
 	}
@@ -30,6 +31,7 @@ class UpdatePrefs(context: Context) {
 		val size = prefs.getString(KEY_SIZE, null) ?: return null
 		val bl = prefs.getString(KEY_BOOTLOADER, null) ?: return null
 		val url = prefs.getString(KEY_URL, null) ?: return null
+		val changelogUrl = prefs.getString(KEY_CHANGELOG_URL, null) ?: return null
 		val version = prefs.getString(KEY_VERSION, null) ?: return null
 		return ManifestData(
 			buildDate = buildDate,
@@ -38,6 +40,7 @@ class UpdatePrefs(context: Context) {
 			size = size,
 			bl = bl,
 			url = url,
+			changelogUrl = changelogUrl,
 			version = version
 		)
 	}
@@ -51,6 +54,7 @@ class UpdatePrefs(context: Context) {
 			.remove(KEY_SIZE)
 			.remove(KEY_BOOTLOADER)
 			.remove(KEY_URL)
+			.remove(KEY_CHANGELOG_URL)
 			.remove(KEY_VERSION)
 			.remove(KEY_CHANGELOG)
 			.remove(KEY_BOOTLOADER_INCOMPATIBLE)
@@ -165,6 +169,7 @@ class UpdatePrefs(context: Context) {
 		private const val KEY_SIZE = "size"
 		private const val KEY_BOOTLOADER = "bootloader"
 		private const val KEY_URL = "url"
+		private const val KEY_CHANGELOG_URL = "changelog_url"
 		private const val KEY_VERSION = "version"
 		private const val KEY_CHANGELOG = "changelog"
 		private const val KEY_DL_ACTIVE = "dl_active"
