@@ -14,6 +14,13 @@
             android:summary="@string/notifications_summary" />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="@string/app_updates">
+        <Preference
+            android:key="pref_check_app_updates"
+            android:title="@string/check_for_updates"
+            android:summary="@string/check_for_updates_summary" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/app_about">
         <Preference
             android:key="@string/about"

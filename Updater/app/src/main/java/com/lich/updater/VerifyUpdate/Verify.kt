@@ -6,6 +6,7 @@ import android.content.Intent
 import android.util.Log
 import com.lich.updater.BuildPropReader
 import com.lich.updater.UpdatePrefs
+import com.lich.updater.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -66,7 +67,7 @@ class Verify : BroadcastReceiver() {
 
         val title = if (success) "Update success" else "Update failed"
         val notification = androidx.core.app.NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.stat_notify_sync)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setAutoCancel(true)
             .build()

@@ -44,7 +44,7 @@ class DownloadProgress(private val context: Context) {
 		val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT else PendingIntent.FLAG_UPDATE_CURRENT
 		val contentIntent = PendingIntent.getActivity(context, 0, intent, flags)
 		return NotificationCompat.Builder(context, CHANNEL_ID)
-			.setSmallIcon(android.R.drawable.stat_sys_download)
+			.setSmallIcon(R.drawable.ic_notification)
 			.setContentTitle(context.getString(R.string.downloading_rom))
 			.setContentText(eta)
 			.setOnlyAlertOnce(true)

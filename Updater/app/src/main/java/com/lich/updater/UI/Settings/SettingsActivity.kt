@@ -24,6 +24,12 @@ class SettingsActivity : AppCompatActivity() {
         supportActionBar?.title = getString(R.string.settings)
     }
     
+    fun getAppUpdateIntentInfo(): Pair<Boolean, String?> {
+        val showAppUpdate = intent.getBooleanExtra("show_app_update", false)
+        val appUpdateVersion = intent.getStringExtra("app_update_version")
+        return Pair(showAppUpdate, appUpdateVersion)
+    }
+    
     override fun onSupportNavigateUp(): Boolean {
         onBackPressed()
         return true

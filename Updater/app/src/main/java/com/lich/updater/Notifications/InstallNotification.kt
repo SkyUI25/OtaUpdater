@@ -49,7 +49,7 @@ class InstallNotification(private val context: Context) {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.install_now))
             .setContentText(context.getString(R.string.install_notification_message))
             .setPriority(NotificationCompat.PRIORITY_HIGH)

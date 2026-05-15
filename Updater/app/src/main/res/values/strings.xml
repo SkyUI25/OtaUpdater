@@ -62,6 +62,16 @@
     <string name="install_generating_script">Generating recovery script...</string>
     <!-- Setting -->
     <string name="app_setting">Application</string>
+    <string name="app_updates">App Updates</string>
+    <string name="check_for_updates">Check for updates</string>
+    <string name="check_for_updates_summary">Check for updater app updates</string>
+    <string name="app_update_available_title">App Update Available</string>
+    <string name="app_update_message">A new version of Updater (%1$s) is available. Do you want to download and install it?</string>
+    <string name="app_up_to_date">App is up to date</string>
+    <string name="app_update_downloading">Downloading App Update</string>
+    <string name="app_update_installing">Installing App Update...</string>
+    <string name="app_update_install_success">Updater was successfully updated</string>
+    <string name="app_update_download_failed">Failed to download app update</string>
     <string name="data_network">Mobile data</string>
     <string name="data_network_summary">Use mobile data to download</string>
     <string name="notifications">Notifications</string>
@@ -84,6 +94,8 @@
     <!-- Update Available Notification -->
     <string name="update_available_channel_name">Update Available</string>
     <string name="update_available_channel_description">Notifications when new ROM updates are available</string>
+    <string name="app_update_channel_name">App Updates</string>
+    <string name="app_update_channel_description">Notifications when new app updates are available</string>
     <string name="update_available_title">New Update Available</string>
     <string name="update_available_message">LichUI %1$s is now available</string>
     <string name="update_available_big_message">LichUI %1$s is now available\nBuild date: %2$s\n\nTap to open Updater and download the update.</string>

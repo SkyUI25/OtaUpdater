@@ -10,6 +10,13 @@ import com.lich.updater.BuildPropReader
 import com.lich.updater.R
 import com.lich.updater.UpdatePrefs
 import com.lich.updater.UI.About.AboutActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import android.widget.Toast
+import com.lich.updater.AppUpdateChecker
+import com.lich.updater.AppUpdateDownloader
 
 class SettingsPreferenceFragment : PreferenceFragmentCompat() {
     
@@ -31,6 +38,12 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         
         // Setup switch preferences
         setupSwitchPreferences()
+        
+        // Setup App Updates preference
+        setupAppUpdatesPreference()
+        
+        // Check if opened from notification
+        checkIntentFromNotification()
     }
     
     private fun updatePreferenceSummaries() {
@@ -57,6 +70,58 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         }
     }
     
+    private fun setupAppUpdatesPreference() {
+        val appUpdatesPref = findPreference<androidx.preference.Preference>("pref_check_app_updates")
+        appUpdatesPref?.setOnPreferenceClickListener {
+            checkAppUpdateManually()
+            true
+        }
+    }
+    
+    private fun checkAppUpdateManually() {
+        Toast.makeText(requireContext(), getString(R.string.checking_for_updates), Toast.LENGTH_SHORT).show()
+        CoroutineScope(Dispatchers.Main).launch {
+            val updateInfo = AppUpdateChecker(requireContext()).checkForAppUpdate()
+            if (updateInfo != null && updateInfo.isUpdateAvailable) {
+                showAppUpdateDialog(updateInfo.tagName, updateInfo)
+            } else {
+                Toast.makeText(requireContext(), getString(R.string.app_up_to_date), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
+    private fun checkIntentFromNotification() {
+        val activity = requireActivity() as? SettingsActivity ?: return
+        val (showAppUpdate, version) = activity.getAppUpdateIntentInfo()
+        if (showAppUpdate && version != null) {
+            // Provide a dummy AppReleaseInfo since we know an update exists but we don't have the full object from the intent.
+            // A quick re-fetch is safer.
+            checkAppUpdateManually()
+        }
+    }
+    
+    private fun showAppUpdateDialog(version: String, updateInfo: com.lich.updater.AppReleaseInfo) {
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle(R.string.app_update_available_title)
+            .setMessage(getString(R.string.app_update_message, version))
+            .setPositiveButton(R.string.download) { dialog, _ ->
+                dialog.dismiss()
+                downloadAndInstallAppUpdate(updateInfo)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+    
+    private fun downloadAndInstallAppUpdate(updateInfo: com.lich.updater.AppReleaseInfo) {
+        Toast.makeText(requireContext(), getString(R.string.app_update_downloading), Toast.LENGTH_SHORT).show()
+        CoroutineScope(Dispatchers.Main).launch {
+            val success = AppUpdateDownloader(requireContext()).downloadAndInstall(updateInfo)
+            if (!success) {
+                Toast.makeText(requireContext(), getString(R.string.app_update_download_failed), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     private fun setupSwitchPreferences() {
         // Mobile data switch
         val mobileDataSwitch = findPreference<SwitchPreferenceCompat>(getString(R.string.data_network))

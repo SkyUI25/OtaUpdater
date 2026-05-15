@@ -221,10 +221,7 @@ class DownloadForegroundService : Service() {
 			NotificationState.RESUMING -> getString(R.string.resuming_download)
 		}
 		
-		val icon = when (state) {
-			NotificationState.VERIFYING -> android.R.drawable.stat_notify_sync
-			else -> android.R.drawable.stat_sys_download
-		}
+		val icon = R.drawable.ic_notification
 		
 		val isIndeterminate = state == NotificationState.RESUMING
 

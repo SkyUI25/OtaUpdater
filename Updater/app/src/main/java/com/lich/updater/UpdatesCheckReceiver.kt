@@ -120,6 +120,13 @@ class UpdatesCheckReceiver : BroadcastReceiver() {
                         Log.d(TAG, "No update available")
                     }
                 }
+                
+                // Also check for App Updates
+                val appUpdateInfo = AppUpdateChecker(context).checkForAppUpdate()
+                if (appUpdateInfo != null && appUpdateInfo.isUpdateAvailable) {
+                    com.lich.updater.Notifications.AppUpdateNotification(context).show(appUpdateInfo.tagName)
+                    Log.d(TAG, "App Update found and notified: ${appUpdateInfo.tagName}")
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error checking updates", e)
             } finally {
