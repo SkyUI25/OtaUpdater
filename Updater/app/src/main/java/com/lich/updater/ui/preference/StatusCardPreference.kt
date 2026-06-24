@@ -233,7 +233,7 @@ class StatusCardPreference @JvmOverloads constructor(
                         gradientView?.alpha = 1f
                     } else {
                         subtitleView?.visibility = View.GONE
-                        if (statusText == context.getString(R.string.internet_not_available) || statusText == context.getString(R.string.root_needed_title)) {
+                        if (statusText == context.getString(R.string.internet_not_available)) {
                             applyStatusGlow(gradientView)
                             gradientView?.alpha = 1f
                         } else {

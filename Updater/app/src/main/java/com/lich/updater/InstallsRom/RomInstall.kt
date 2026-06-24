@@ -43,7 +43,7 @@ class RomInstall(private val context: Context) {
     /**
      * Reboot device to recovery mode
      */
-    private fun rebootToRecovery() {
+    fun rebootToRecovery() {
         try {
             Log.d(TAG, "Attempting to reboot to recovery using PowerManager")
             val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -59,21 +59,17 @@ class RomInstall(private val context: Context) {
     
     private fun tryAlternativeReboot() {
         try {
-            Log.d(TAG, "Trying alternative reboot method via RootManager")
-            
-            val rootManager = com.lich.updater.root.RootManager()
-            
-            CoroutineScope(Dispatchers.IO).launch {
-                val rebootResult = rootManager.executeCommand("su -mm -c 'svc power reboot recovery'")
-                if (!rebootResult.success) {
-                    val altRebootResult = rootManager.executeCommand("su -c 'svc power reboot recovery'")
-                    if (!altRebootResult.success) {
-                        Log.e(TAG, "All reboot methods failed. Manual reboot to recovery required.")
-                    }
-                }
+            Log.d(TAG, "Trying alternative reboot method")
+            Runtime.getRuntime().exec("reboot recovery")
+        } catch (e: IOException) {
+            Log.e(TAG, "Runtime reboot failed: ${e.message}")
+            try {
+                Log.d(TAG, "Trying with su command")
+                Runtime.getRuntime().exec("su -c 'reboot recovery'")
+            } catch (ex: Exception) {
+                Log.e(TAG, "Su reboot failed: ${ex.message}")
+                Log.e(TAG, "All reboot methods failed. Manual reboot to recovery required.")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Su reboot failed: ${e.message}")
         }
     }
     
@@ -82,16 +78,18 @@ class RomInstall(private val context: Context) {
      * This method can be used to verify prerequisites before installation
      */
     fun canInstall(): Boolean {
-        // Since we are enforcing root access globally in MainActivity,
-        // we already have the necessary privileges via libsu to reboot.
-        Log.d(TAG, "Can install check - relying on root access")
+        // Check if we have reboot permissions
+        val hasRebootPermission = context.checkSelfPermission(android.Manifest.permission.REBOOT) == 
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+        
+        Log.d(TAG, "Can install check - hasRebootPermission: $hasRebootPermission")
         
         // TODO: Add other checks for:
         // - Sufficient storage space
         // - Battery level
         // - Device compatibility
         
-        return true
+        return hasRebootPermission
     }
     
     /**

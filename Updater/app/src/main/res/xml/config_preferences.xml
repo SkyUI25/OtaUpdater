@@ -2,7 +2,7 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory android:title="@string/app_setting">
+    <PreferenceCategory android:key="category_app_settings" android:title="@string/app_setting">
         <androidx.preference.SwitchPreferenceCompat
             android:key="@string/data_network"
             android:title="@string/data_network"
@@ -14,18 +14,31 @@
             android:summary="@string/notifications_summary" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/app_updates">
+    <PreferenceCategory android:key="category_app_updates" android:title="@string/app_updates">
         <Preference
             android:key="pref_check_app_updates"
             android:title="@string/check_for_updates"
             android:summary="@string/check_for_updates_summary" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/app_about">
+    <PreferenceCategory android:key="category_app_about" android:title="@string/app_about">
         <Preference
             android:key="@string/about"
             android:title="@string/about"
             android:summary="@string/about_summary"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="category_developer_options"
+        android:title="@string/developer_options">
+        <androidx.preference.SwitchPreferenceCompat
+            android:key="pref_developer_mode"
+            android:title="@string/developer_mode_switch"
+            android:summary="@string/developer_mode_on_summary" />
+        <Preference
+            android:key="pref_test_recovery"
+            android:title="@string/test_recovery_script"
+            android:summary="@string/test_recovery_script_summary" />
     </PreferenceCategory>
 
 </PreferenceScreen>

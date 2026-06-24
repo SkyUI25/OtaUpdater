@@ -17,9 +17,6 @@
     <string name="new_version">New Version</string>
     <string name="rom_up_to_date">Rom is up to date</string>
     <string name="checking_for_updates">Checking for updates</string>
-    <string name="root_needed_title">Root needed</string>
-    <string name="root_needed_subtitle">Grant root access to the app and reopen it</string>
-    <string name="recheck_root">Recheck</string>
     <string name="new_update_available">New Update Available</string>
     <string name="internet_not_available">Internet not available</string>
     <string name="internet_suggestion">Check your network connection and try again</string>
@@ -99,4 +96,17 @@
     <string name="update_available_title">New Update Available</string>
     <string name="update_available_message">LichUI %1$s is now available</string>
     <string name="update_available_big_message">LichUI %1$s is now available\nBuild date: %2$s\n\nTap to open Updater and download the update.</string>
+    <!-- Developer Options -->
+    <string name="developer_options">Developer options</string>
+    <string name="developer_mode_switch">Developer mode</string>
+    <string name="developer_mode_on_summary">Developer mode is active</string>
+    <string name="test_recovery_script">Test recovery script</string>
+    <string name="test_recovery_script_summary">Generate a test script and reboot to recovery</string>
+    <string name="dev_key_dialog_title">Enter developer key</string>
+    <string name="dev_key_dialog_message">Enter the developer key to enable developer options</string>
+    <string name="dev_key_error">Incorrect key</string>
+    <string name="dev_key_hint">Developer key</string>
+    <string name="test_script_generating">Generating test recovery script...</string>
+    <string name="test_script_rebooting">Test script generated. Rebooting to recovery...</string>
+    <string name="dev_mode_enabled">Developer options enabled</string>
 </resources>

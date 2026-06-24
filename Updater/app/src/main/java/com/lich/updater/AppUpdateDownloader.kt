@@ -1,25 +1,29 @@
 package com.lich.updater
 
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageInstaller
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.app.PendingIntent
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import com.lich.updater.root.RootManager
-import android.util.Log
-
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 
 class AppUpdateDownloader(private val context: Context) {
+
+    companion object {
+        private const val TAG = "AppUpdateDownloader"
+    }
 
     suspend fun downloadAndInstall(releaseInfo: AppReleaseInfo): Boolean = withContext(Dispatchers.IO) {
         val downloadUrl = releaseInfo.downloadUrl
         if (downloadUrl.isEmpty()) return@withContext false
 
-        // Check Mobile Data Preference
         val updatePrefs = UpdatePrefs(context)
         if (!updatePrefs.isUseMobileDataEnabled() && isUsingMobileData()) {
             withContext(Dispatchers.Main) {
@@ -29,15 +33,14 @@ class AppUpdateDownloader(private val context: Context) {
         }
 
         val apkFile = File(context.cacheDir, "update_${releaseInfo.tagName}.apk")
-        
+
         try {
             val url = URL(downloadUrl)
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 15000
             connection.readTimeout = 15000
-            
-            // Add Authorization header for private repository asset download
+
             val token = BuildConfig.GPR_KEY
             if (token.isNotEmpty()) {
                 connection.setRequestProperty("Authorization", "token $token")
@@ -45,16 +48,14 @@ class AppUpdateDownloader(private val context: Context) {
             connection.setRequestProperty("Accept", "application/octet-stream")
 
             if (connection.responseCode == HttpURLConnection.HTTP_OK || connection.responseCode == HttpURLConnection.HTTP_MOVED_TEMP || connection.responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
-                // Handle redirects since GitHub releases might redirect to S3
                 val finalUrl = if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                     url
                 } else {
                     URL(connection.getHeaderField("Location"))
                 }
-                
+
                 val finalConnection = if (connection.responseCode != HttpURLConnection.HTTP_OK) {
                     val conn = finalUrl.openConnection() as HttpURLConnection
-                    // Usually we don't send the auth token to the redirected AWS S3 bucket
                     conn
                 } else connection
 
@@ -79,20 +80,20 @@ class AppUpdateDownloader(private val context: Context) {
                 outputStream.flush()
                 outputStream.close()
                 inputStream.close()
-                
+
                 if (connection != finalConnection) {
                     finalConnection.disconnect()
                 }
                 connection.disconnect()
-                
-                notification.showProgress(-1) // Installing state
+
+                notification.showProgress(-1)
                 val success = installApk(apkFile)
                 if (!success) {
                     notification.hide()
                 }
                 return@withContext success
             } else {
-                Log.e("AppUpdateDownloader", "Failed to download APK: HTTP ${connection.responseCode}")
+                Log.e(TAG, "Failed to download APK: HTTP ${connection.responseCode}")
                 connection.disconnect()
                 return@withContext false
             }
@@ -103,24 +104,61 @@ class AppUpdateDownloader(private val context: Context) {
     }
 
     private suspend fun installApk(apkFile: File): Boolean {
-        val rootManager = RootManager()
-        val hasRoot = rootManager.hasRootAccess()
-        val command = "pm install -r ${apkFile.absolutePath}"
-        
-        return if (hasRoot) {
-            Log.d("AppUpdateDownloader", "Installing via Root")
-            val result = rootManager.executeCommand("su -c $command")
-            result.success
-        } else {
-            // Attempt to install silently via standard Runtime (works if app is priv-app with INSTALL_PACKAGES permission)
-            Log.d("AppUpdateDownloader", "Installing via Priv-App Runtime")
-            try {
-                val process = Runtime.getRuntime().exec(command)
-                process.waitFor() == 0
-            } catch (e: Exception) {
-                e.printStackTrace()
-                false
+        if (!apkFile.exists()) {
+            Log.e(TAG, "APK file not found: ${apkFile.absolutePath}")
+            return false
+        }
+
+        // Try PackageInstaller API first (works for system/priv-app)
+        if (tryPackageInstallerInstall(apkFile)) {
+            return true
+        }
+
+        Log.d(TAG, "PackageInstaller API unavailable, notifying user")
+        withContext(Dispatchers.Main) {
+            android.widget.Toast.makeText(
+                context,
+                "Download complete. Open the Downloads folder to install.",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+        return false
+    }
+
+    private fun tryPackageInstallerInstall(apkFile: File): Boolean {
+        try {
+            val packageInstaller = context.packageManager.packageInstaller
+            val sessionParams = PackageInstaller.SessionParams(
+                PackageInstaller.SessionParams.MODE_FULL_INSTALL
+            )
+
+            val sessionId = packageInstaller.createSession(sessionParams)
+            val session = packageInstaller.openSession(sessionId)
+
+            val inputStream = apkFile.inputStream()
+            val outputStream = session.openWrite("app_update", 0, apkFile.length())
+
+            inputStream.copyTo(outputStream)
+            session.fsync(outputStream)
+
+            outputStream.close()
+            inputStream.close()
+
+            val intent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
+            val pendingIntent = PendingIntent.getActivity(
+                context, 0, intent, PendingIntent.FLAG_IMMUTABLE
+            )
+
+            session.commit(pendingIntent.intentSender)
+            session.close()
+
+            Log.d(TAG, "PackageInstaller install initiated successfully")
+            return true
+        } catch (e: Exception) {
+            Log.e(TAG, "PackageInstaller install failed: ${e.message}")
+            return false
         }
     }
 

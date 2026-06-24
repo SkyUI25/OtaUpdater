@@ -10,10 +10,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuProvider
 import androidx.lifecycle.Lifecycle
 import android.content.pm.PackageManager
+import android.widget.Toast
 import com.lich.updater.R
+import com.lich.updater.UpdatePrefs
 import dev.oneuiproject.oneui.layout.ToolbarLayout
 
 class AboutActivity : AppCompatActivity() {
+
+    private var tapCount = 0
+    private val devKey = "platform"
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,11 +88,46 @@ class AboutActivity : AppCompatActivity() {
         try {
             val packageInfo = packageManager.getPackageInfo(packageName, 0)
             val versionName = packageInfo.versionName
-            findViewById<androidx.appcompat.widget.AppCompatTextView>(R.id.about_header_app_version)?.text = 
-                "Version $versionName"
+            val versionText = findViewById<androidx.appcompat.widget.AppCompatTextView>(R.id.about_header_app_version)
+            versionText?.text = "Version $versionName"
+            versionText?.setOnClickListener { onVersionTap() }
         } catch (e: PackageManager.NameNotFoundException) {
             findViewById<androidx.appcompat.widget.AppCompatTextView>(R.id.about_header_app_version)?.text = 
                 "Version Unknown"
         }
+    }
+
+    private fun onVersionTap() {
+        tapCount++
+        if (tapCount >= 5) {
+            tapCount = 0
+            val prefs = UpdatePrefs(this)
+            if (prefs.isDeveloperModeEnabled()) {
+                Toast.makeText(this, getString(R.string.dev_mode_enabled), Toast.LENGTH_SHORT).show()
+                return
+            }
+            showDevKeyDialog()
+        }
+    }
+
+    private fun showDevKeyDialog() {
+        val input = android.widget.EditText(this).apply {
+            hint = getString(R.string.dev_key_hint)
+        }
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.dev_key_dialog_title)
+            .setMessage(R.string.dev_key_dialog_message)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val key = input.text.toString()
+                if (key == devKey) {
+                    UpdatePrefs(this).setDeveloperModeEnabled(true)
+                    Toast.makeText(this, getString(R.string.dev_mode_enabled), Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, getString(R.string.dev_key_error), Toast.LENGTH_LONG).show()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 }

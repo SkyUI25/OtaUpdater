@@ -1,7 +1,0 @@
-Para revertir completamente todos los cambios realizados para la implementación de Root y regresar a la versión de la aplicación como sistema (system/priv-app), ejecuta los siguientes comandos en la terminal desde la raíz del proyecto:
-
-1. Revertir los cambios en los archivos modificados utilizando el patch generado:
-git apply -R root_implementation.patch
-
-2. Eliminar la carpeta y los archivos nuevos que manejan las sesiones root que ya no son necesarios:
-rm -rf app/src/main/java/com/lich/updater/root/

@@ -189,7 +189,16 @@ class UpdatePrefs(context: Context) {
 		private const val KEY_BOOTLOADER_INCOMPATIBLE = "bootloader_incompatible"
 		private const val KEY_CHECK_INTERVAL = "check_interval"
 		private const val KEY_LAST_CHECK_TIME = "last_check_time"
+		private const val KEY_DEVELOPER_MODE = "developer_mode"
 	}
+
+	fun setDeveloperModeEnabled(enabled: Boolean) {
+		prefs.edit()
+			.putBoolean(KEY_DEVELOPER_MODE, enabled)
+			.apply()
+	}
+
+	fun isDeveloperModeEnabled(): Boolean = prefs.getBoolean(KEY_DEVELOPER_MODE, false)
 	
 	// Last check time management
 	fun saveLastCheckTime(time: String) {

@@ -37,22 +37,17 @@ import androidx.core.content.PermissionChecker
 import android.graphics.drawable.GradientDrawable
 import android.graphics.Color
 
-import com.lich.updater.root.RootManager
-
 class MainActivity : AppCompatActivity() {
     private lateinit var getManifest: GetManifest
     private lateinit var changelogReader: ChangelogReader
     private lateinit var updatePrefs: UpdatePrefs
     private lateinit var romInstall: RomInstall
     private lateinit var installNotification: InstallNotification
-    private lateinit var rootManager: RootManager
     private var initialStateApplied = false
     private var allowFetchChangelog = true
     private var dotsJob: kotlinx.coroutines.Job? = null
     private var currentDotsBaseText: String? = null
     private var revealAnimator: android.animation.ValueAnimator? = null
-    var isRooted = false
-        private set
 
     private val requestNotifPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         updatePrefs.setNotificationPermissionAsked(granted)
@@ -79,7 +74,6 @@ class MainActivity : AppCompatActivity() {
         updatePrefs = UpdatePrefs(this)
         romInstall = RomInstall(this)
         installNotification = InstallNotification(this)
-        rootManager = RootManager()
         
         // Ask notification permission on first open (Android 13+)
         maybeRequestNotificationPermission()
@@ -109,6 +103,34 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         
+        // Always reconcile UI when returning to the foreground
+        // This also handles the initial state application
+        if (applyPersistedUpdateStateOrFetch()) {
+            if (!reconcileMd5UiFromPrefs()) {
+                if (!reconcileInstallUiFromPrefs()) {
+                    reconcileDownloadUiFromPrefs()
+                }
+            }
+        }
+        initialStateApplied = true
+        
+        // Additional check: if install state exists but file is missing, clear it
+        val installStatus = updatePrefs.getInstallStatus()
+        if (installStatus == UpdatePrefs.INSTALL_STATUS_READY || installStatus == UpdatePrefs.INSTALL_STATUS_INSTALLING) {
+            val filePath = updatePrefs.getInstallFilePath()
+            val installFile = if (filePath != null) java.io.File(filePath) else null
+            if (installFile?.exists() != true) {
+                android.util.Log.d("MainActivity", "Install state exists but file missing, clearing install state")
+                updatePrefs.clearInstallState()
+                updatePrefs.clearMd5State()
+                // Reset button to download state
+                setDownloadButtonCancel(false)
+                setDownloadButtonEnabled(true)
+                // Trigger UI reconstruction
+                reconcileDownloadUiFromPrefs()
+            }
+        }
+        
         // Hide install notification when app comes to foreground
         installNotification.hide()
 
@@ -123,61 +145,6 @@ class MainActivity : AppCompatActivity() {
             addAction(DownloadForegroundService.ACTION_MD5_FAILED)
         }
         androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).registerReceiver(downloadReceiver, filter)
-        
-        // Root Check
-        checkRootAccess()
-    }
-    
-    private fun checkRootAccess() {
-        CoroutineScope(Dispatchers.Main).launch {
-            isRooted = withContext(Dispatchers.IO) { rootManager.hasRootAccess() }
-            if (!isRooted) {
-                // Not rooted, update UI to ROOT_NEEDED
-                // Cancel any ongoing dots animation or update checks handled elsewhere if possible
-                showDownloadButton(false)
-                
-                // CRITICAL: Unhide the preferences fragment that is hidden by default
-                showPreferences()
-                
-                getSettingsFragment()?.updateStatusText(
-                    getString(R.string.root_needed_title), 
-                    subtitle = getString(R.string.root_needed_subtitle)
-                )
-            } else {
-                // If we get root, re-trigger the normal update check, or let the standard flow take over
-                // (e.g., if it was in 'Root Needed' state, now we can fetch updates normally)
-                val currentText = getSettingsFragment()?.findPreference<com.lich.updater.ui.preference.StatusCardPreference>("pref_update_status")?.summary?.toString() ?: ""
-                
-                // Always reconcile UI when returning to the foreground
-                // This also handles the initial state application
-                if (applyPersistedUpdateStateOrFetch()) {
-                    if (!reconcileMd5UiFromPrefs()) {
-                        if (!reconcileInstallUiFromPrefs()) {
-                            reconcileDownloadUiFromPrefs()
-                        }
-                    }
-                }
-                initialStateApplied = true
-                
-                // Additional check: if install state exists but file is missing, clear it
-                val installStatus = updatePrefs.getInstallStatus()
-                if (installStatus == UpdatePrefs.INSTALL_STATUS_READY || installStatus == UpdatePrefs.INSTALL_STATUS_INSTALLING) {
-                    val filePath = updatePrefs.getInstallFilePath()
-                    val installFile = if (filePath != null) java.io.File(filePath) else null
-                    if (installFile?.exists() != true) {
-                        android.util.Log.d("MainActivity", "Install state exists but file missing, clearing install state")
-                        updatePrefs.clearInstallState()
-                        // Ensure we sync the MD5 state so we don't have dangling success flags
-                        updatePrefs.clearMd5State()
-                        // Reset button to download state
-                        setDownloadButtonCancel(false)
-                        setDownloadButtonEnabled(true)
-                        // Trigger UI reconstruction
-                        reconcileDownloadUiFromPrefs()
-                    }
-                }
-            }
-        }
     }
 
     private fun applyPersistedUpdateStateOrFetch(): Boolean {
@@ -461,7 +428,6 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun checkForUpdates() {
-        if (!isRooted) return
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 // Get build prop date
@@ -618,7 +584,6 @@ class MainActivity : AppCompatActivity() {
     }
     
     fun checkForUpdatesWithProgress() {
-        if (!isRooted) return
         CoroutineScope(Dispatchers.Main).launch {
             // Start blinking animation with "Checking for updates..."
             startBlinkingAnimation(getString(R.string.checking_for_updates))
@@ -881,7 +846,6 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun startBackgroundUpdateChecker() {
-        if (!isRooted) return
         if (updatePrefs.isUpdateNotificationsEnabled()) {
             UpdatesCheckReceiver.schedule(this)
         } else {

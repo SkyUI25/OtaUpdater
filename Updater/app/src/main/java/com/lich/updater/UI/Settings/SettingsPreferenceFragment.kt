@@ -2,6 +2,8 @@ package com.lich.updater.UI.Settings
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.preference.Preference
+import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import androidx.preference.SeslSwitchPreferenceScreen
@@ -10,6 +12,7 @@ import com.lich.updater.BuildPropReader
 import com.lich.updater.R
 import com.lich.updater.UpdatePrefs
 import com.lich.updater.UI.About.AboutActivity
+import com.lich.updater.InstallsRom.RecoveryScript.GenerateScript
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,6 +25,7 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
     
     private lateinit var buildPropReader: BuildPropReader
     private lateinit var updatePrefs: UpdatePrefs
+    private val devKey = "platform"
     
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.config_preferences, rootKey)
@@ -42,10 +46,18 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         // Setup App Updates preference
         setupAppUpdatesPreference()
         
+        // Setup Developer Options
+        setupDeveloperOptions()
+        
         // Check if opened from notification
         checkIntentFromNotification()
     }
     
+    override fun onResume() {
+        super.onResume()
+        updateDeveloperOptionsVisibility()
+    }
+
     private fun updatePreferenceSummaries() {
         // Update OneUI version
         findPreference<androidx.preference.Preference>(getString(R.string.oneui_version))?.summary = 
@@ -204,5 +216,63 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun setupDeveloperOptions() {
+        val devCategory = findPreference<PreferenceCategory>("category_developer_options")
+        val devSwitch = findPreference<SwitchPreferenceCompat>("pref_developer_mode")
+        val testRecovery = findPreference<Preference>("pref_test_recovery")
+
+        devSwitch?.apply {
+            isChecked = updatePrefs.isDeveloperModeEnabled()
+            setOnPreferenceChangeListener { _, newValue ->
+                val enabled = newValue as Boolean
+                if (!enabled) {
+                    updatePrefs.setDeveloperModeEnabled(false)
+                    updateDeveloperOptionsVisibility()
+                }
+                true
+            }
+        }
+
+        testRecovery?.setOnPreferenceClickListener {
+            testRecoveryScript()
+            true
+        }
+    }
+
+    private fun updateDeveloperOptionsVisibility() {
+        val devCategory = findPreference<PreferenceCategory>("category_developer_options")
+        val devSwitch = findPreference<SwitchPreferenceCompat>("pref_developer_mode")
+        val testRecovery = findPreference<Preference>("pref_test_recovery")
+
+        val enabled = updatePrefs.isDeveloperModeEnabled()
+        devCategory?.isVisible = enabled
+        devSwitch?.isChecked = enabled
+    }
+
+    private fun testRecoveryScript() {
+        Toast.makeText(requireContext(), getString(R.string.test_script_generating), Toast.LENGTH_SHORT).show()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val generateScript = GenerateScript(requireContext())
+                val success = generateScript.generateTestScript()
+                if (success) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(requireContext(), getString(R.string.test_script_rebooting), Toast.LENGTH_LONG).show()
+                    }
+                    val romInstall = com.lich.updater.InstallsRom.RomInstall(requireContext())
+                    romInstall.rebootToRecovery()
+                } else {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(requireContext(), "Failed to generate test script", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 }
