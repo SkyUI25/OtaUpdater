@@ -117,7 +117,6 @@ When hiding the application icon from the launcher drawer using `DEFAULT`, if yo
 ```
 patch/0001-Introduce-Lich-Updater.patch
 ```
-*(Full path: `/home/mrdemonc/Documents/developer/LichApps/patch/0001-Introduce-Lich-Updater.patch`)*
 
 Apply this patch when decompiling/building `SecSettings.apk` to add the entry for Lich Updater into the Software Update settings menu.
 
@@ -232,7 +231,7 @@ To include the Updater inside a custom ROM build:
 
 ### 2. Adding ROM Privileged Permissions Files
 
-To grant the necessary privileged permissions (such as `REBOOT`, `RECOVERY`, `INSTALL_PACKAGES`, `ACCESS_CACHE_FILESYSTEM`) without package permission errors, you must copy the permission configuration files included in the project's `system/` directory (`/home/mrdemonc/Documents/developer/LichApps/system`) into your ROM:
+To grant the necessary privileged permissions (such as `REBOOT`, `RECOVERY`, `INSTALL_PACKAGES`, `ACCESS_CACHE_FILESYSTEM`) without package permission errors, you must copy the permission configuration files included in the project's `system/` directory (`OtaUpdater/system`) into your ROM:
 
 Copy the following files into your ROM filesystem:
 - `system/etc/permissions/privapp-permissions-com.lich.updater.xml` -> `/system/etc/permissions/privapp-permissions-com.lich.updater.xml`
