@@ -1,3 +1,15 @@
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootDir.resolve("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
+}
+
+val gprUser: String = localProperties.getProperty("gpr.user") ?: System.getenv("GPR_USER") ?: ""
+val gprKey: String = localProperties.getProperty("gpr.key") ?: System.getenv("GPR_KEY") ?: ""
+
 pluginManagement {
     repositories {
         google {
@@ -22,22 +34,22 @@ dependencyResolutionManagement {
         maven {
             url = uri("https://maven.pkg.github.com/tribalfs/sesl-androidx")
             credentials {
-                username = "MrDemon-LICH"
-                password = "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"
+                username = gprUser
+                password = gprKey
             }
         }
         maven {
             url = uri("https://maven.pkg.github.com/tribalfs/sesl-material-components-android")
             credentials {
-                username = "MrDemon-LICH"
-                password = "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"
+                username = gprUser
+                password = gprKey
             }
         }
         maven {
             url = uri("https://maven.pkg.github.com/tribalfs/oneui-design")
             credentials {
-                username = "MrDemon-LICH"
-                password = "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"
+                username = gprUser
+                password = gprKey
             }
         }
     }
@@ -45,3 +57,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Updater"
 include(":app")
+

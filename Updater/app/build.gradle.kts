@@ -40,8 +40,14 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val gprKey = findProperty("gpr.key") as? String ?: ""
-        val gprUser = findProperty("gpr.user") as? String ?: ""
+        val localProps = java.util.Properties().apply {
+            val file = rootProject.file("local.properties")
+            if (file.exists()) {
+                file.inputStream().use { load(it) }
+            }
+        }
+        val gprKey = localProps.getProperty("gpr.key") ?: findProperty("gpr.key") as? String ?: System.getenv("GPR_KEY") ?: ""
+        val gprUser = localProps.getProperty("gpr.user") ?: findProperty("gpr.user") as? String ?: System.getenv("GPR_USER") ?: ""
         buildConfigField("String", "GPR_KEY", "\"$gprKey\"")
         buildConfigField("String", "GPR_USER", "\"$gprUser\"")
     }
