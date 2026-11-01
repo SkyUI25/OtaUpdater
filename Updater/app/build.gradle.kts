@@ -48,8 +48,8 @@ android {
         }
         val gprKey = localProps.getProperty("gpr.key") ?: findProperty("gpr.key") as? String ?: System.getenv("GPR_KEY") ?: ""
         val gprUser = localProps.getProperty("gpr.user") ?: findProperty("gpr.user") as? String ?: System.getenv("GPR_USER") ?: ""
-        buildConfigField("String", "GPR_KEY", "\"$gprKey\"")
-        buildConfigField("String", "GPR_USER", "\"$gprUser\"")
+        buildConfigField("String", "GPR_KEY", "\"\"")
+        buildConfigField("String", "GPR_USER", "\"\"")
     }
 
     buildFeatures {

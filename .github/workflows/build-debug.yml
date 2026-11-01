@@ -1,0 +1,44 @@
+
+name: Build Debug APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Updater/**'
+      - '.github/workflows/build-debug.yml'
+
+jobs:
+  build:
+    name: Build OtaUpdater Debug
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build Debug APK
+        working-directory: Updater
+        env:
+          GPR_USER: ${{ secrets.GPR_USER }}
+          GPR_KEY: ${{ secrets.GPR_KEY }}
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:assembleDebug
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: OtaUpdater-debug
+          path: Updater/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
