@@ -30,12 +30,15 @@ class Verify : BroadcastReceiver() {
                 }
 
                 val buildPropReader = BuildPropReader(context)
-                val deviceBuildDate = buildPropReader.getBuildDate()
-                val manifestBuildDate = manifest.buildDate
+                val deviceSkyUIVersion = buildPropReader.getSkyUIVersion()
+                val manifestSkyUIVersion = manifest.version
 
-                Log.d(TAG, "deviceBuildDate=$deviceBuildDate manifestBuildDate=$manifestBuildDate")
+                Log.d(TAG, "deviceSkyUIVersion=$deviceSkyUIVersion manifestSkyUIVersion=$manifestSkyUIVersion")
 
-                if (deviceBuildDate == manifestBuildDate) {
+                if (
+                    deviceSkyUIVersion != context.getString(R.string.unknown) &&
+                    deviceSkyUIVersion == manifestSkyUIVersion
+                 ) {
                     // Success: clear saved update state so app reloads manifest next launch
                     updatePrefs.clearUpdate()
                     // Show success notification

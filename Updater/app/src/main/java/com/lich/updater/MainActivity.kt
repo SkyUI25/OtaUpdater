@@ -163,10 +163,14 @@ class MainActivity : AppCompatActivity() {
         if (updatePrefs.isUpdateAvailable()) {
             val saved = updatePrefs.getSavedManifestData()
             val buildPropReader = BuildPropReader(this)
-            val currentBuildDate = buildPropReader.getBuildDate()
 
-            if (saved != null && currentBuildDate != getString(R.string.unknown)) {
-                val comparison = getManifest.compareDates(currentBuildDate, saved.buildDate)
+            val currentSkyUIVersion = buildPropReader.getSkyUIVersion()
+
+            if (saved != null && currentSkyUIVersion != getString(R.string.unknown)) {
+                val comparison = getManifest.compareVersions(
+                currentSkyUIVersion,
+                saved.version
+            )
                 if (comparison == DateComparisonResult.UP_TO_DATE) {
                     // Device is now on saved (or newer) build → clear persisted flag and fetch fresh
                     android.util.Log.d("MainActivity", "Device updated, clearing state")
@@ -430,9 +434,9 @@ class MainActivity : AppCompatActivity() {
     private fun checkForUpdates() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                // Get build prop date
+                // Get installed SkyUI version
                 val buildPropReader = BuildPropReader(this@MainActivity)
-                val buildPropDate = buildPropReader.getBuildDate()
+                val skyUIVersion = buildPropReader.getSkyUIVersion()
                 
                 // Get manifest data
                 val getManifest = GetManifest(this@MainActivity)
@@ -440,9 +444,12 @@ class MainActivity : AppCompatActivity() {
                     getManifest.fetchManifestData()
                 }
                 
-                if (manifestData != null && buildPropDate != getString(R.string.unknown)) {
-                    // Compare dates
-                    val comparisonResult = getManifest.compareDates(buildPropDate, manifestData.buildDate)
+                if (manifestData != null && skyUIVersion != getString(R.string.unknown)) {
+                    // Compare SkyUI versions
+                    val comparisonResult = getManifest.compareVersions(
+                    skyUIVersion,
+                    manifestData.version
+                )
                     
                     // Update last check time
                     val lastCheckTime = getFormattedCurrentTime()
@@ -592,9 +599,9 @@ class MainActivity : AppCompatActivity() {
             delay(3500)
             
             try {
-                // Get build prop date
+                // Get installed SkyUI version
                 val buildPropReader = BuildPropReader(this@MainActivity)
-                val buildPropDate = buildPropReader.getBuildDate()
+                val skyUIVersion = buildPropReader.getSkyUIVersion()
                 
                 // Get manifest data
                 val getManifest = GetManifest(this@MainActivity)
@@ -602,9 +609,12 @@ class MainActivity : AppCompatActivity() {
                     getManifest.fetchManifestData()
                 }
                 
-                if (manifestData != null && buildPropDate != getString(R.string.unknown)) {
-                    // Compare dates
-                    val comparisonResult = getManifest.compareDates(buildPropDate, manifestData.buildDate)
+                if (manifestData != null && skyUIVersion != getString(R.string.unknown)) {
+                    // Compare SkyUI versions
+                    val comparisonResult = getManifest.compareVersions(
+                        skyUIVersion,
+                        manifestData.version
+                   )
                     
                     // Update last check time
                     val lastCheckTime = getFormattedCurrentTime()

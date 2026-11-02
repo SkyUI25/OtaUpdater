@@ -37,7 +37,7 @@ class UpdateAvailable(private val context: Context) {
         }
     }
     
-    fun show(version: String, buildDate: String) {
+    fun show(version: String) {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -54,7 +54,7 @@ class UpdateAvailable(private val context: Context) {
             .setContentTitle(context.getString(R.string.update_available_title))
             .setContentText(context.getString(R.string.update_available_message, version))
             .setStyle(NotificationCompat.BigTextStyle()
-                .bigText(context.getString(R.string.update_available_big_message, version, buildDate)))
+                .bigText(context.getString(R.string.update_available_big_message, version))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)

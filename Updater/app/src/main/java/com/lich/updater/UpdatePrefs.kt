@@ -12,7 +12,6 @@ class UpdatePrefs(context: Context) {
 	fun saveManifestData(manifestData: ManifestData) {
 		prefs.edit()
 			.putBoolean(KEY_UPDATE_AVAILABLE, true)
-			.putString(KEY_BUILD_DATE, manifestData.buildDate)
 			.putString(KEY_MD5, manifestData.md5)
 			.putString(KEY_PATCH, manifestData.patch)
 			.putString(KEY_SIZE, manifestData.size)
@@ -25,7 +24,6 @@ class UpdatePrefs(context: Context) {
 
 	fun getSavedManifestData(): ManifestData? {
 		if (!isUpdateAvailable()) return null
-		val buildDate = prefs.getString(KEY_BUILD_DATE, null) ?: return null
 		val md5 = prefs.getString(KEY_MD5, null) ?: return null
 		val patch = prefs.getString(KEY_PATCH, null) ?: return null
 		val size = prefs.getString(KEY_SIZE, null) ?: return null
@@ -34,7 +32,6 @@ class UpdatePrefs(context: Context) {
 		val changelogUrl = prefs.getString(KEY_CHANGELOG_URL, null) ?: return null
 		val version = prefs.getString(KEY_VERSION, null) ?: return null
 		return ManifestData(
-			buildDate = buildDate,
 			md5 = md5,
 			patch = patch,
 			size = size,
@@ -48,7 +45,6 @@ class UpdatePrefs(context: Context) {
 	fun clearUpdate() {
 		prefs.edit()
 			.putBoolean(KEY_UPDATE_AVAILABLE, false)
-			.remove(KEY_BUILD_DATE)
 			.remove(KEY_MD5)
 			.remove(KEY_PATCH)
 			.remove(KEY_SIZE)
@@ -163,7 +159,6 @@ class UpdatePrefs(context: Context) {
 
 		// Private preference keys
 		private const val KEY_UPDATE_AVAILABLE = "update_available"
-		private const val KEY_BUILD_DATE = "build_date"
 		private const val KEY_MD5 = "md5"
 		private const val KEY_PATCH = "patch"
 		private const val KEY_SIZE = "size"

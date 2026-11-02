@@ -8,6 +8,7 @@
     <string name="settings_title">Settings</string>
     <string name="oneui_version">OneUI</string>
     <string name="lichui_version">LichUI</string>
+	<string name="skyui_version">SkyUI Version</string>
     <string name="build_date">Build date</string>
     <string name="new_build_date">Build date</string>
     <string name="size_rom">Size</string>
@@ -94,8 +95,8 @@
     <string name="app_update_channel_name">App Updates</string>
     <string name="app_update_channel_description">Notifications when new app updates are available</string>
     <string name="update_available_title">New Update Available</string>
-    <string name="update_available_message">LichUI %1$s is now available</string>
-    <string name="update_available_big_message">LichUI %1$s is now available\nBuild date: %2$s\n\nTap to open Updater and download the update.</string>
+    <string name="update_available_message">SkyUI update %1$s is available</string>
+    <string name="update_available_big_message">A new SkyUI version (%1$s) is available. Open System Update to download it.</string>
     <!-- Developer Options -->
     <string name="developer_options">Developer options</string>
     <string name="developer_mode_switch">Developer mode</string>

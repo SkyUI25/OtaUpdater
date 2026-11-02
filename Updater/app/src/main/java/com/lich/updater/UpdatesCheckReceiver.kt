@@ -105,19 +105,22 @@ class UpdatesCheckReceiver : BroadcastReceiver() {
                 val manifestData = GetManifest(context).fetchManifestData()
                 
                 if (manifestData != null) {
-                    val currentBuildDate = BuildPropReader(context).getBuildDate()
-                    val comparison = GetManifest(context).compareDates(currentBuildDate, manifestData.buildDate)
+                    val currentSkyUIVersion = BuildPropReader(context).getSkyUIVersion()
+                    val comparison = GetManifest(context).compareVersions(currentSkyUIVersion, manifestData.version)
                     
                     if (comparison == DateComparisonResult.UPDATE_AVAILABLE) {
                          val savedData = updatePrefs.getSavedManifestData()
                          if (savedData == null || savedData.version != manifestData.version) {
                              // Notify
-                             com.lich.updater.Notifications.UpdateAvailable(context).show(manifestData.version, manifestData.buildDate)
-                             updatePrefs.saveManifestData(manifestData)
-                             Log.d(TAG, "Update found and notified: ${manifestData.version}")
+							 updatePrefs.saveManifestData(manifestData)
+							 
+                             com.lich.updater.Notifications.UpdateAvailable(context)
+                                 .show(manifestData.version)
+								 
+							 Log.d(TAG, "Update found: Installed=$currentSkyUIVersion Available=${manifestData.version}")
                          }
                     } else {
-                        Log.d(TAG, "No update available")
+                        Log.d(TAG, "No update available. Current version: $currentSkyUIVersion")
                     }
                 }
                 

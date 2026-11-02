@@ -63,13 +63,9 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         findPreference<androidx.preference.Preference>(getString(R.string.oneui_version))?.summary = 
             buildPropReader.getOneUIVersion()
         
-        // Update LichUI version
-        findPreference<androidx.preference.Preference>(getString(R.string.lichui_version))?.summary = 
-            buildPropReader.getLichUIVersion()
-        
-        // Update build date
-        findPreference<androidx.preference.Preference>(getString(R.string.build_date))?.summary = 
-            buildPropReader.getBuildDate()
+        // Update SkyUI version
+        findPreference<androidx.preference.Preference>(getString(R.string.skyui_version))?.summary = 
+            buildPropReader.getSkyUIVersion()
     }
     
     private fun setupAboutPreference() {

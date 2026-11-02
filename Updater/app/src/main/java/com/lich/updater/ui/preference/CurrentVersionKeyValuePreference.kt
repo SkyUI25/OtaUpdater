@@ -20,13 +20,7 @@ class CurrentVersionKeyValuePreference @JvmOverloads constructor(
             notifyChanged()
         }
 
-    var lichUiValue: CharSequence? = null
-        set(value) {
-            field = value
-            notifyChanged()
-        }
-
-    var buildDateValue: CharSequence? = null
+    var skyUiValue: CharSequence? = null
         set(value) {
             field = value
             notifyChanged()
@@ -42,11 +36,9 @@ class CurrentVersionKeyValuePreference @JvmOverloads constructor(
 
         val oneUiText = holder.itemView.findViewById<TextView>(R.id.value_oneui)
         val lichUiText = holder.itemView.findViewById<TextView>(R.id.value_lichui)
-        val buildDateText = holder.itemView.findViewById<TextView>(R.id.value_build_date)
 
         oneUiText.text = oneUiValue ?: context.getString(R.string.unknown)
-        lichUiText.text = lichUiValue ?: context.getString(R.string.unknown)
-        buildDateText.text = buildDateValue ?: context.getString(R.string.unknown)
+        lichUiText.text = skyUiValue ?: context.getString(R.string.unknown)
     }
 }
 

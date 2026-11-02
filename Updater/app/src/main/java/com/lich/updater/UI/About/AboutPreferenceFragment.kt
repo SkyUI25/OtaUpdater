@@ -30,13 +30,9 @@ class AboutPreferenceFragment : PreferenceFragmentCompat() {
         findPreference<androidx.preference.Preference>(getString(R.string.oneui_version))?.summary = 
             buildPropReader.getOneUIVersion()
         
-        // Update LichUI version
+         // Update SkyUI version
         findPreference<androidx.preference.Preference>(getString(R.string.lichui_version))?.summary = 
-            buildPropReader.getLichUIVersion()
-        
-        // Update build date
-        findPreference<androidx.preference.Preference>(getString(R.string.build_date))?.summary = 
-            buildPropReader.getBuildDate()
+            buildPropReader.getSkyUIVersion()
     }
     
     private fun setupDeveloperClickListeners() {

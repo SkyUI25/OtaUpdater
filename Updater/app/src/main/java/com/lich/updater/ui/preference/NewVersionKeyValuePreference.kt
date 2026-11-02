@@ -14,12 +14,6 @@ class NewVersionKeyValuePreference @JvmOverloads constructor(
     defStyleRes: Int = 0
 ) : Preference(context, attrs, defStyleAttr, defStyleRes) {
 
-    var buildDateValue: CharSequence? = null
-        set(value) {
-            field = value
-            notifyChanged()
-        }
-
     var versionValue: CharSequence? = null
         set(value) {
             field = value
@@ -40,11 +34,9 @@ class NewVersionKeyValuePreference @JvmOverloads constructor(
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
 
-        val buildDateText = holder.itemView.findViewById<TextView>(R.id.value_build_date)
         val versionText = holder.itemView.findViewById<TextView>(R.id.value_version)
         val sizeText = holder.itemView.findViewById<TextView>(R.id.value_size)
 
-        buildDateText.text = buildDateValue ?: context.getString(R.string.unknown)
         versionText.text = versionValue ?: context.getString(R.string.unknown)
         sizeText.text = sizeValue ?: context.getString(R.string.unknown)
     }
