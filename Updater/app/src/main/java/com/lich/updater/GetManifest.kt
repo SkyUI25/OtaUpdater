@@ -37,12 +37,15 @@ class GetManifest(private val context: Context) {
         var connection: HttpURLConnection? = null
 
         try {
-            val url = URL(MANIFEST_URL)
+            val url = URL("$MANIFEST_URL?t=${System.currentTimeMillis()}")
             connection = url.openConnection() as HttpURLConnection
 
             connection.requestMethod = "GET"
             connection.connectTimeout = 10000
             connection.readTimeout = 10000
+			connection.useCaches = false
+			connection.setRequestProperty("Cache-Control", "no-cache")
+			connection.setRequestProperty("Pragma", "no-cache")
 
             if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                 val response = connection.inputStream.bufferedReader().use {
