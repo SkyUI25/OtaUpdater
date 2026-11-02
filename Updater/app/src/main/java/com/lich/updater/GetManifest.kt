@@ -43,6 +43,27 @@ class GetManifest(private val context: Context) {
             connection.requestMethod = "GET"
             connection.connectTimeout = 10000
             connection.readTimeout = 10000
+			
+			android.util.Log.d(
+    "GetManifest",
+    "Request URL: ${connection.url}"
+)
+
+android.util.Log.d(
+    "GetManifest",
+    "HTTP Date: ${connection.getHeaderField("Date")}"
+)
+
+android.util.Log.d(
+    "GetManifest",
+    "Cache Age: ${connection.getHeaderField("Age")}"
+)
+
+android.util.Log.d(
+    "GetManifest",
+    "ETag: ${connection.getHeaderField("ETag")}"
+)
+			
 			connection.useCaches = false
 			connection.setRequestProperty("Cache-Control", "no-cache")
 			connection.setRequestProperty("Pragma", "no-cache")
