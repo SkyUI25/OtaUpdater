@@ -10,7 +10,7 @@ import androidx.core.app.NotificationCompat
 import com.lich.updater.MainActivity
 import com.lich.updater.R
 
-class UpdateAvailable(private val context: Context) {
+class NewVersionKeyValuePreference @JvmOverloads constructor(
 
     companion object {
         private const val CHANNEL_ID = "update_available_channel"
