@@ -148,54 +148,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyPersistedUpdateStateOrFetch(): Boolean {
-        // If there is no internet, show NO_INTERNET UI regardless of saved state (unless install is ready)
         if (!isInternetAvailable()) {
             if (updatePrefs.isInstallReady()) {
-                // If install is ready, keep showing that instead of no internet
                 val saved = updatePrefs.getSavedManifestData()
                 updateUIForComparison(DateComparisonResult.UPDATE_AVAILABLE, saved)
                 return true
             }
+
             updateUIForComparison(DateComparisonResult.NO_INTERNET)
             return false
         }
-        // Check persisted state first: if an update was detected before, validate against current build
-        if (updatePrefs.isUpdateAvailable()) {
-            val saved = updatePrefs.getSavedManifestData()
-            val buildPropReader = BuildPropReader(this)
 
-            val currentSkyUIVersion = buildPropReader.getSkyUIVersion()
+        allowFetchChangelog = true
+        checkForUpdates()
 
-            if (saved != null && currentSkyUIVersion != getString(R.string.unknown)) {
-                val comparison = getManifest.compareVersions(
-                currentSkyUIVersion,
-                saved.version
-            )
-                if (comparison == DateComparisonResult.UP_TO_DATE) {
-                    // Device is now on saved (or newer) build → clear persisted flag and fetch fresh
-                    android.util.Log.d("MainActivity", "Device updated, clearing state")
-                    updatePrefs.clearUpdate()
-                    allowFetchChangelog = true
-                    checkForUpdates()
-                    return false // Don't reconcile with old data
-                } else {
-                    // Still older than saved manifest → keep showing update available without fetching
-                    allowFetchChangelog = false
-                    updateUIForComparison(DateComparisonResult.UPDATE_AVAILABLE, saved)
-                    return true
-                }
-            } else {
-                // Missing data; fallback to showing saved state if present
-                allowFetchChangelog = false
-                updateUIForComparison(DateComparisonResult.UPDATE_AVAILABLE, saved)
-                return true
-            }
-        } else {
-            // Preferences are hidden by default in SettingsFragment.onViewCreated()
-            allowFetchChangelog = true
-            checkForUpdates()
-            return false // Updates will be handled when network fetch completes
-        }
+        return false
     }
 
     private fun reconcileDownloadUiFromPrefs() {
@@ -434,42 +401,52 @@ class MainActivity : AppCompatActivity() {
     private fun checkForUpdates() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                // Get installed SkyUI version
                 val buildPropReader = BuildPropReader(this@MainActivity)
                 val skyUIVersion = buildPropReader.getSkyUIVersion()
-                
-                // Get manifest data
-                val getManifest = GetManifest(this@MainActivity)
-                val manifestData = withContext(Dispatchers.IO) {
-                    getManifest.fetchManifestData()
-                }
-                
-                if (manifestData != null && skyUIVersion != getString(R.string.unknown)) {
-                    // Compare SkyUI versions
-                    val comparisonResult = getManifest.compareVersions(
-                    skyUIVersion,
-                    manifestData.version
-                )
-                    
-                    // Update last check time
-                    val lastCheckTime = getFormattedCurrentTime()
-                    updatePrefs.saveLastCheckTime(lastCheckTime)
-                    
-                    // Update UI based on comparison
-                    updateUIForComparison(comparisonResult, manifestData)
 
-                    // Persist or clear state depending on result
-                    when (comparisonResult) {
-                        DateComparisonResult.UPDATE_AVAILABLE -> updatePrefs.saveManifestData(manifestData)
-                        DateComparisonResult.UP_TO_DATE -> updatePrefs.clearUpdate()
-                        else -> {}
+                val manifestResult = getManifest.fetchManifestData()
+
+                when (manifestResult) {
+                    is ManifestResult.Success -> {
+                        val manifestData = manifestResult.data
+
+                        if (skyUIVersion != getString(R.string.unknown)) {
+                            val comparisonResult = getManifest.compareVersions(
+                                skyUIVersion,
+                                manifestData.version
+                            )
+
+                            val lastCheckTime = getFormattedCurrentTime()
+                            updatePrefs.saveLastCheckTime(lastCheckTime)
+
+                            updateUIForComparison(comparisonResult, manifestData)
+
+                            when (comparisonResult) {
+                                DateComparisonResult.UPDATE_AVAILABLE ->
+                                    updatePrefs.saveManifestData(manifestData)
+
+                                DateComparisonResult.UP_TO_DATE ->
+                                    updatePrefs.clearUpdate()
+
+                                else -> {}
+                            }
+                        } else {
+                            updateUIForComparison(DateComparisonResult.UNKNOWN)
+                        }
                     }
-                } else if (manifestData == null) {
-                    // If we can't get manifest data, it's likely no internet
-                    updateUIForComparison(DateComparisonResult.NO_INTERNET)
-                } else {
-                    // If we can't get build prop data, keep "Unknown"
-                    updateUIForComparison(DateComparisonResult.UNKNOWN)
+
+                    ManifestResult.DeviceNotSupported -> {
+					    updatePrefs.clearUpdate()
+                        updateUIForComparison(DateComparisonResult.DEVICE_NOT_SUPPORTED)
+                    }
+
+                    ManifestResult.NoInternet -> {
+                        updateUIForComparison(DateComparisonResult.NO_INTERNET)
+                    }
+
+                    ManifestResult.Error -> {
+                        updateUIForComparison(DateComparisonResult.UNKNOWN)
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -515,6 +492,10 @@ class MainActivity : AppCompatActivity() {
                 hideChangelog()
             }
             DateComparisonResult.NO_INTERNET -> {
+                switchToCurrentVersionPreferences()
+                hideChangelog()
+            }
+			DateComparisonResult.DEVICE_NOT_SUPPORTED -> {
                 switchToCurrentVersionPreferences()
                 hideChangelog()
             }
@@ -582,6 +563,12 @@ class MainActivity : AppCompatActivity() {
                 getSettingsFragment()?.updateStatusText(getString(R.string.internet_not_available), subtitle = getString(R.string.internet_suggestion))
                 showDownloadButton(false)
             }
+			DateComparisonResult.DEVICE_NOT_SUPPORTED -> {
+                getSettingsFragment()?.updateStatusText(
+                    getString(R.string.device_not_supported)
+                )
+                showDownloadButton(false)
+            }
         }
     }
     
@@ -592,55 +579,62 @@ class MainActivity : AppCompatActivity() {
     
     fun checkForUpdatesWithProgress() {
         CoroutineScope(Dispatchers.Main).launch {
-            // Start blinking animation with "Checking for updates..."
             startBlinkingAnimation(getString(R.string.checking_for_updates))
-            
-            // Add delay to simulate check (as requested before)
+
             delay(3500)
-            
+
             try {
-                // Get installed SkyUI version
                 val buildPropReader = BuildPropReader(this@MainActivity)
                 val skyUIVersion = buildPropReader.getSkyUIVersion()
-                
-                // Get manifest data
-                val getManifest = GetManifest(this@MainActivity)
-                val manifestData = withContext(Dispatchers.IO) {
-                    getManifest.fetchManifestData()
-                }
-                
-                if (manifestData != null && skyUIVersion != getString(R.string.unknown)) {
-                    // Compare SkyUI versions
-                    val comparisonResult = getManifest.compareVersions(
-                        skyUIVersion,
-                        manifestData.version
-                   )
-                    
-                    // Update last check time
-                    val lastCheckTime = getFormattedCurrentTime()
-                    updatePrefs.saveLastCheckTime(lastCheckTime)
-                    
-                    // Update UI based on comparison
-                    updateUIForComparison(comparisonResult, manifestData)
 
-                    // Persist or clear state depending on result
-                    when (comparisonResult) {
-                        DateComparisonResult.UPDATE_AVAILABLE -> updatePrefs.saveManifestData(manifestData)
-                        DateComparisonResult.UP_TO_DATE -> updatePrefs.clearUpdate()
-                        else -> {}
+                val manifestResult = getManifest.fetchManifestData()
+
+                when (manifestResult) {
+                    is ManifestResult.Success -> {
+                        val manifestData = manifestResult.data
+
+                        if (skyUIVersion != getString(R.string.unknown)) {
+                            val comparisonResult = getManifest.compareVersions(
+                                skyUIVersion,
+                                manifestData.version
+                            )
+
+                            val lastCheckTime = getFormattedCurrentTime()
+                            updatePrefs.saveLastCheckTime(lastCheckTime)
+
+                            updateUIForComparison(comparisonResult, manifestData)
+
+                            when (comparisonResult) {
+                                DateComparisonResult.UPDATE_AVAILABLE ->
+                                    updatePrefs.saveManifestData(manifestData)
+
+                                DateComparisonResult.UP_TO_DATE ->
+                                    updatePrefs.clearUpdate()
+
+                                else -> {}
+                            }
+                        } else {
+                            updateUIForComparison(DateComparisonResult.UNKNOWN)
+                        }
                     }
-                } else if (manifestData == null) {
-                    // If we can't get manifest data, it's likely no internet
-                    updateUIForComparison(DateComparisonResult.NO_INTERNET)
-                } else {
-                    // If we can't get build prop data, keep "Unknown"
-                    updateUIForComparison(DateComparisonResult.UNKNOWN)
+
+                    ManifestResult.DeviceNotSupported -> {
+					    updatePrefs.clearUpdate()
+                        updateUIForComparison(DateComparisonResult.DEVICE_NOT_SUPPORTED)
+                    }
+
+                    ManifestResult.NoInternet -> {
+                        updateUIForComparison(DateComparisonResult.NO_INTERNET)
+                    }
+
+                    ManifestResult.Error -> {
+                        updateUIForComparison(DateComparisonResult.UNKNOWN)
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 updateUIForComparison(DateComparisonResult.UNKNOWN)
             } finally {
-                // Stop blinking animation
                 stopBlinkingAnimation()
             }
         }

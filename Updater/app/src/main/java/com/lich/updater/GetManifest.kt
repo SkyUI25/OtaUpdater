@@ -19,6 +19,13 @@ data class ManifestData(
     val version: String
 )
 
+sealed class ManifestResult {
+    data class Success(val data: ManifestData) : ManifestResult()
+    object DeviceNotSupported : ManifestResult()
+    object NoInternet : ManifestResult()
+    object Error : ManifestResult()
+}
+
 class GetManifest(private val context: Context) {
 
     companion object {
@@ -26,43 +33,40 @@ class GetManifest(private val context: Context) {
             "https://raw.githubusercontent.com/SkyUI25/ota_manifest/refs/heads/master/manifest.json"
     }
 
-    suspend fun fetchManifestData(): ManifestData? = withContext(Dispatchers.IO) {
+    suspend fun fetchManifestData(): ManifestResult = withContext(Dispatchers.IO) {
+        var connection: HttpURLConnection? = null
+
         try {
             val url = URL(MANIFEST_URL)
-            val connection = url.openConnection() as HttpURLConnection
+            connection = url.openConnection() as HttpURLConnection
 
             connection.requestMethod = "GET"
             connection.connectTimeout = 10000
             connection.readTimeout = 10000
 
             if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                val inputStream = connection.inputStream
-                val bufferedReader = BufferedReader(InputStreamReader(inputStream))
-                val response = StringBuilder()
-
-                var line: String?
-                while (bufferedReader.readLine().also { line = it } != null) {
-                    response.append(line)
+                val response = connection.inputStream.bufferedReader().use {
+                    it.readText()
                 }
 
-                bufferedReader.close()
-                inputStream.close()
-                connection.disconnect()
-
-                return@withContext parseManifestJson(response.toString())
+                parseManifestJson(response)
             } else {
-                connection.disconnect()
-                return@withContext null
+                ManifestResult.Error
             }
+        } catch (e: java.io.IOException) {
+            e.printStackTrace()
+            ManifestResult.NoInternet
         } catch (e: Exception) {
             e.printStackTrace()
-            return@withContext null
+            ManifestResult.Error
+        } finally {
+            connection?.disconnect()
         }
     }
 
     private fun getDeviceName(): String {
         return try {
-            val process = Runtime.getRuntime().exec("getprop ro.product.device")
+            val process = Runtime.getRuntime().exec("getprop ro.product.vendor.device")
             val reader = BufferedReader(InputStreamReader(process.inputStream))
             val output = reader.readLine()?.trim()
             reader.close()
@@ -74,7 +78,7 @@ class GetManifest(private val context: Context) {
         }
     }
 
-    private fun parseManifestJson(jsonString: String): ManifestData? {
+    private fun parseManifestJson(jsonString: String): ManifestResult {
         return try {
             val jsonObject = JSONObject(jsonString)
             val responseArray = jsonObject.getJSONArray("response")
@@ -89,7 +93,7 @@ class GetManifest(private val context: Context) {
                 val item = responseArray.getJSONObject(i)
 
                 if (item.has("device") && item.getString("device") == currentDevice) {
-                    return ManifestData(
+                    val manifestData = ManifestData(
                         md5 = item.getString("md5"),
                         patch = formatPatchDate(item.getInt("patch")),
                         size = formatSize(item.getLong("size")),
@@ -98,13 +102,21 @@ class GetManifest(private val context: Context) {
                         changelogUrl = item.getString("changelog"),
                         version = item.getString("version")
                     )
+
+                    return ManifestResult.Success(manifestData)
                 }
             }
 
-            null
+            android.util.Log.w(
+                "GetManifest",
+                "Device '$currentDevice' is not supported"
+            )
+
+            ManifestResult.DeviceNotSupported
+
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+            ManifestResult.Error
         }
     }
 
@@ -163,6 +175,7 @@ class GetManifest(private val context: Context) {
 enum class DateComparisonResult {
     UP_TO_DATE,
     UPDATE_AVAILABLE,
+	DEVICE_NOT_SUPPORTED,
     UNKNOWN,
     NO_INTERNET
 }
