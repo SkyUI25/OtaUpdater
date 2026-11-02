@@ -102,34 +102,71 @@ class UpdatesCheckReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 Log.d(TAG, "Checking for updates...")
-                val manifestData = GetManifest(context).fetchManifestData()
-                
-                if (manifestData != null) {
-                    val currentSkyUIVersion = BuildPropReader(context).getSkyUIVersion()
-                    val comparison = GetManifest(context).compareVersions(currentSkyUIVersion, manifestData.version)
-                    
-                    if (comparison == DateComparisonResult.UPDATE_AVAILABLE) {
-                         val savedData = updatePrefs.getSavedManifestData()
-                         if (savedData == null || savedData.version != manifestData.version) {
-                             // Notify
-							 updatePrefs.saveManifestData(manifestData)
-							 
-                             com.lich.updater.Notifications.UpdateAvailable(context)
-                                 .show(manifestData.version)
-								 
-							 Log.d(TAG, "Update found: Installed=$currentSkyUIVersion Available=${manifestData.version}")
-                         }
-                    } else {
-                        Log.d(TAG, "No update available. Current version: $currentSkyUIVersion")
+
+                val manifestResult = GetManifest(context).fetchManifestData()
+
+                when (manifestResult) {
+                    is ManifestResult.Success -> {
+                        val manifestData = manifestResult.data
+                        val currentSkyUIVersion =
+                            BuildPropReader(context).getSkyUIVersion()
+
+                        val comparison = GetManifest(context).compareVersions(
+                            currentSkyUIVersion,
+                            manifestData.version
+                        )
+
+                        if (comparison == DateComparisonResult.UPDATE_AVAILABLE) {
+                             val savedData = updatePrefs.getSavedManifestData()
+
+                            if (savedData == null ||
+                                savedData.version != manifestData.version
+                            ) {
+                                updatePrefs.saveManifestData(manifestData)
+
+                                com.lich.updater.Notifications.UpdateAvailable(context)
+                                    .show(manifestData.version)
+
+                                Log.d(
+                                    TAG,
+                                    "Update found: Installed=$currentSkyUIVersion Available=${manifestData.version}"
+                                )
+                            }
+                        } else {
+                            Log.d(
+                                TAG,
+                                "No update available. Current version: $currentSkyUIVersion"
+                            )
+                        }
+                    }
+
+                    ManifestResult.DeviceNotSupported -> {
+                        Log.w(TAG, "Device is not supported. Skipping ROM update notification.")
+                        updatePrefs.clearUpdate()
+                    }
+
+                    ManifestResult.NoInternet -> {
+                        Log.w(TAG, "Unable to check ROM updates: No internet")
+                    }
+
+                    ManifestResult.Error -> {
+                        Log.e(TAG, "Unable to check ROM updates: Manifest error")
                     }
                 }
-                
-                // Also check for App Updates
+
+                // 4. Also check for App Updates
                 val appUpdateInfo = AppUpdateChecker(context).checkForAppUpdate()
+
                 if (appUpdateInfo != null && appUpdateInfo.isUpdateAvailable) {
-                    com.lich.updater.Notifications.AppUpdateNotification(context).show(appUpdateInfo.tagName)
-                    Log.d(TAG, "App Update found and notified: ${appUpdateInfo.tagName}")
+                    com.lich.updater.Notifications.AppUpdateNotification(context)
+                        .show(appUpdateInfo.tagName)
+
+                    Log.d(
+                       TAG,
+                        "App Update found and notified: ${appUpdateInfo.tagName}"
+                    )
                 }
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error checking updates", e)
             } finally {
