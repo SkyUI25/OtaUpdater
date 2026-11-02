@@ -188,11 +188,13 @@ class RomDownloader(private val context: Context) {
 					}
 				}
 
-				if (totalBytes > 0 && outputFile.length() != totalBytes) {
-					throw IOException("Download size mismatch. Expected=$totalBytes, Got=${outputFile.length()}")
+				if (totalBytes > 0 && currentOutputFile.length() != totalBytes) {
+					throw IOException("Download size mismatch. Expected=$totalBytes, Got=${currentOutputFile.length()}")
 				}
+				
+				Log.d("RomDownloader", "Download completed: ${currentOutputFile.absolutePath} (${currentOutputFile.length()} bytes)")
 
-				onCompleted(outputFile)
+				onCompleted(currentOutputFile)
 			}
 		} catch (t: Throwable) {
 			Log.e("RomDownloader", "Download error: ${t.message}", t)
