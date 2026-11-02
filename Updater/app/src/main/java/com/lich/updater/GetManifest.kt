@@ -92,7 +92,14 @@ class GetManifest(private val context: Context) {
             for (i in 0 until responseArray.length()) {
                 val item = responseArray.getJSONObject(i)
 
-                if (item.has("device") && item.getString("device") == currentDevice) {
+                val manifestDevice = item.optString("device").trim()
+
+android.util.Log.d(
+    "GetManifest",
+    "Comparing manifest='$manifestDevice' with current='$currentDevice'"
+)
+
+if (manifestDevice.equals(currentDevice.trim(), ignoreCase = true)) {
                     val manifestData = ManifestData(
                         md5 = item.getString("md5"),
                         patch = formatPatchDate(item.getInt("patch")),
