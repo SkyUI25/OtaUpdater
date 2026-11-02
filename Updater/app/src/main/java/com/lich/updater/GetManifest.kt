@@ -13,7 +13,6 @@ data class ManifestData(
     val md5: String,
     val patch: String,
     val size: String,
-    val bl: String,
     val url: String,
     val changelogUrl: String,
     val version: String
@@ -112,7 +111,6 @@ if (manifestDevice.equals(currentDevice.trim(), ignoreCase = true)) {
                         md5 = item.getString("md5"),
                         patch = formatPatchDate(item.getInt("patch")),
                         size = formatSize(item.getLong("size")),
-                        bl = item.getString("bl"),
                         url = item.getString("url"),
                         changelogUrl = item.getString("changelog"),
                         version = item.getString("version")

@@ -15,7 +15,6 @@ class UpdatePrefs(context: Context) {
 			.putString(KEY_MD5, manifestData.md5)
 			.putString(KEY_PATCH, manifestData.patch)
 			.putString(KEY_SIZE, manifestData.size)
-			.putString(KEY_BOOTLOADER, manifestData.bl)
 			.putString(KEY_URL, manifestData.url)
 			.putString(KEY_CHANGELOG_URL, manifestData.changelogUrl)
 			.putString(KEY_VERSION, manifestData.version)
@@ -23,24 +22,24 @@ class UpdatePrefs(context: Context) {
 	}
 
 	fun getSavedManifestData(): ManifestData? {
-		if (!isUpdateAvailable()) return null
-		val md5 = prefs.getString(KEY_MD5, null) ?: return null
-		val patch = prefs.getString(KEY_PATCH, null) ?: return null
-		val size = prefs.getString(KEY_SIZE, null) ?: return null
-		val bl = prefs.getString(KEY_BOOTLOADER, null) ?: return null
-		val url = prefs.getString(KEY_URL, null) ?: return null
-		val changelogUrl = prefs.getString(KEY_CHANGELOG_URL, null) ?: return null
-		val version = prefs.getString(KEY_VERSION, null) ?: return null
-		return ManifestData(
-			md5 = md5,
-			patch = patch,
-			size = size,
-			bl = bl,
-			url = url,
-			changelogUrl = changelogUrl,
-			version = version
-		)
-	}
+        if (!isUpdateAvailable()) return null
+
+        val md5 = prefs.getString(KEY_MD5, null) ?: return null
+        val patch = prefs.getString(KEY_PATCH, null) ?: return null
+        val size = prefs.getString(KEY_SIZE, null) ?: return null
+        val url = prefs.getString(KEY_URL, null) ?: return null
+        val changelogUrl = prefs.getString(KEY_CHANGELOG_URL, null) ?: return null
+        val version = prefs.getString(KEY_VERSION, null) ?: return null
+
+        return ManifestData(
+            md5 = md5,
+            patch = patch,
+            size = size,
+            url = url,
+            changelogUrl = changelogUrl,
+            version = version
+        )
+    }
 
 	fun clearUpdate() {
 		prefs.edit()
@@ -48,12 +47,10 @@ class UpdatePrefs(context: Context) {
 			.remove(KEY_MD5)
 			.remove(KEY_PATCH)
 			.remove(KEY_SIZE)
-			.remove(KEY_BOOTLOADER)
 			.remove(KEY_URL)
 			.remove(KEY_CHANGELOG_URL)
 			.remove(KEY_VERSION)
 			.remove(KEY_CHANGELOG)
-			.remove(KEY_BOOTLOADER_INCOMPATIBLE)
 			// Clear MD5 state
 			.remove(KEY_MD5_ACTIVE)
 			.remove(KEY_MD5_PERCENT)
@@ -162,7 +159,6 @@ class UpdatePrefs(context: Context) {
 		private const val KEY_MD5 = "md5"
 		private const val KEY_PATCH = "patch"
 		private const val KEY_SIZE = "size"
-		private const val KEY_BOOTLOADER = "bootloader"
 		private const val KEY_URL = "url"
 		private const val KEY_CHANGELOG_URL = "changelog_url"
 		private const val KEY_VERSION = "version"
@@ -181,7 +177,6 @@ class UpdatePrefs(context: Context) {
 		private const val KEY_INSTALL_FILE_PATH = "install_file_path"
 		private const val KEY_USE_MOBILE_DATA = "use_mobile_data"
 		private const val KEY_UPDATE_NOTIFICATIONS = "update_notifications"
-		private const val KEY_BOOTLOADER_INCOMPATIBLE = "bootloader_incompatible"
 		private const val KEY_CHECK_INTERVAL = "check_interval"
 		private const val KEY_LAST_CHECK_TIME = "last_check_time"
 		private const val KEY_DEVELOPER_MODE = "developer_mode"
@@ -245,21 +240,6 @@ class UpdatePrefs(context: Context) {
 	}
 	
 	fun isUpdateNotificationsEnabled(): Boolean = prefs.getBoolean(KEY_UPDATE_NOTIFICATIONS, true) // Default: true (enabled)
-	
-	// Bootloader compatibility state management
-	fun saveBootloaderIncompatible(incompatible: Boolean) {
-		prefs.edit()
-			.putBoolean(KEY_BOOTLOADER_INCOMPATIBLE, incompatible)
-			.apply()
-	}
-	
-	fun isBootloaderIncompatible(): Boolean = prefs.getBoolean(KEY_BOOTLOADER_INCOMPATIBLE, false)
-	
-	fun clearBootloaderIncompatible() {
-		prefs.edit()
-			.remove(KEY_BOOTLOADER_INCOMPATIBLE)
-			.apply()
-	}
 
 	// Update check interval (in hours)
 	fun setCheckInterval(hours: Int) {

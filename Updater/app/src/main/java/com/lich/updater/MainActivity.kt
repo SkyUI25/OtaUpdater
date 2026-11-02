@@ -528,32 +528,17 @@ class MainActivity : AppCompatActivity() {
                 showDownloadButton(false)
             }
             DateComparisonResult.UPDATE_AVAILABLE -> {
-                // Verify bootloader compatibility before showing download button
-                if (manifestData != null) {
-                    val bootloaderVerify = com.lich.updater.bootloader.BootloaderVerify(this)
-                    val bootloaderResult = bootloaderVerify.verifyBootloaderCompatibility(manifestData)
-                    
-                    when (bootloaderResult) {
-                        com.lich.updater.bootloader.BootloaderVerificationResult.COMPATIBLE -> {
-                            showDownloadButton(true)
-                            setDownloadButtonCancel(updatePrefs.isDownloadActive())
-                        }
-                        com.lich.updater.bootloader.BootloaderVerificationResult.INCOMPATIBLE -> {
-                            showDownloadButton(true)
-                            setDownloadButtonText("Update bootloader")
-                            setDownloadButtonEnabled(false)
-                            updatePrefs.saveBootloaderIncompatible(true)
-                        }
-                        com.lich.updater.bootloader.BootloaderVerificationResult.UNKNOWN -> {
-                            showDownloadButton(true)
-                            setDownloadButtonCancel(updatePrefs.isDownloadActive())
-                        }
+                showDownloadButton(true)
+                setDownloadButtonCancel(updatePrefs.isDownloadActive())
+
+                getSettingsFragment()?.updateStatusText(
+                    getString(R.string.new_update_available),
+                    subtitle = if (manifestData != null) {
+                       "Rom version ${manifestData.version}"
+                    } else {
+                       ""
                     }
-                } else {
-                    showDownloadButton(true)
-                    setDownloadButtonCancel(updatePrefs.isDownloadActive())
-                }
-                getSettingsFragment()?.updateStatusText(getString(R.string.new_update_available), subtitle = if (manifestData != null) "Rom version ${manifestData.version}" else "")
+                )
             }
             DateComparisonResult.UNKNOWN -> {
                 getSettingsFragment()?.updateStatusText(getString(R.string.unknown))
