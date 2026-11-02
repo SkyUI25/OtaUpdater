@@ -1,45 +1,81 @@
-package com.lich.updater.ui.preference
+package com.lich.updater.Notifications
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
-import android.util.AttributeSet
-import android.widget.TextView
-import androidx.preference.Preference
-import androidx.preference.PreferenceViewHolder
+import android.content.Intent
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import com.lich.updater.MainActivity
 import com.lich.updater.R
 
-class NewVersionKeyValuePreference @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = androidx.preference.R.attr.preferenceStyle,
-    defStyleRes: Int = 0
-) : Preference(context, attrs, defStyleAttr, defStyleRes) {
+class UpdateAvailable(private val context: Context) {
 
-    var versionValue: CharSequence? = null
-        set(value) {
-            field = value
-            notifyChanged()
-        }
+    companion object {
+        private const val CHANNEL_ID = "update_available_channel"
+        private const val NOTIFICATION_ID = 1004
+    }
 
-    var sizeValue: CharSequence? = null
-        set(value) {
-            field = value
-            notifyChanged()
-        }
+    private val notificationManager =
+        context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     init {
-        layoutResource = R.layout.preference_new_version_kv
-        isSelectable = false
+        createNotificationChannel()
     }
 
-    override fun onBindViewHolder(holder: PreferenceViewHolder) {
-        super.onBindViewHolder(holder)
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                context.getString(R.string.update_available_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = context.getString(R.string.update_available_channel_description)
+                setShowBadge(true)
+            }
 
-        val versionText = holder.itemView.findViewById<TextView>(R.id.value_version)
-        val sizeText = holder.itemView.findViewById<TextView>(R.id.value_size)
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
 
-        versionText.text = versionValue ?: context.getString(R.string.unknown)
-        sizeText.text = sizeValue ?: context.getString(R.string.unknown)
+    fun show(version: String) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(context.getString(R.string.update_available_title))
+            .setContentText(
+                context.getString(R.string.update_available_message, version)
+            )
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(
+                        context.getString(
+                            R.string.update_available_big_message,
+                            version
+                        )
+                    )
+            )
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setShowWhen(true)
+            .build()
+
+        notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    fun hide() {
+        notificationManager.cancel(NOTIFICATION_ID)
     }
 }
-
-

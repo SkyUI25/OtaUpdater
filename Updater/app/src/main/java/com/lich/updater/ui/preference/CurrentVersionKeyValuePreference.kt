@@ -34,12 +34,13 @@ class CurrentVersionKeyValuePreference @JvmOverloads constructor(
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
 
-        val oneUiText = holder.itemView.findViewById<TextView>(R.id.value_oneui)
-        val lichUiText = holder.itemView.findViewById<TextView>(R.id.value_lichui)
+        val oneUiText =
+            holder.itemView.findViewById<TextView>(R.id.value_oneui)
+
+        val skyUiText =
+            holder.itemView.findViewById<TextView>(R.id.value_skyui)
 
         oneUiText.text = oneUiValue ?: context.getString(R.string.unknown)
-        lichUiText.text = skyUiValue ?: context.getString(R.string.unknown)
+        skyUiText.text = skyUiValue ?: context.getString(R.string.unknown)
     }
 }
-
-
