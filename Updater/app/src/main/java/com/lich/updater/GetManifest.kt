@@ -51,6 +51,11 @@ class GetManifest(private val context: Context) {
                 val response = connection.inputStream.bufferedReader().use {
                     it.readText()
                 }
+				
+				android.util.Log.d(
+    "GetManifest",
+    "Fetched manifest: $response"
+)
 
                 parseManifestJson(response)
             } else {
