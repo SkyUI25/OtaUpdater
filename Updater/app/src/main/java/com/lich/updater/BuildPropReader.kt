@@ -11,8 +11,7 @@ class BuildPropReader(private val context: Context) {
     companion object {
         private const val BUILD_PROP_PATH = "/system/build.prop"
         private const val ONEUI_VERSION_PROP = "ro.build.version.oneui"
-        private const val LICHUI_VERSION_PROP = "ro.on.core.version"
-        private const val BUILD_DATE_PROP = "ro.on.core.build"
+        private const val SKYUI_VERSION_PROP = "ro.skyui.version"
         private const val VENDOR_BUILD_VERSION_PROP = "ro.vendor.build.version.incremental"
     }
     
@@ -29,7 +28,7 @@ class BuildPropReader(private val context: Context) {
     
     private fun loadBuildPropViaGetprop() {
         try {
-            val properties = listOf(ONEUI_VERSION_PROP, LICHUI_VERSION_PROP, BUILD_DATE_PROP, VENDOR_BUILD_VERSION_PROP)
+            val properties = listOf(ONEUI_VERSION_PROP, SKYUI_VERSION_PROP, VENDOR_BUILD_VERSION_PROP)
             
             for (prop in properties) {
                 try {
@@ -70,27 +69,19 @@ class BuildPropReader(private val context: Context) {
         }
     }
     
-    fun getLichUIVersion(): String {
-        return buildPropMap[LICHUI_VERSION_PROP] ?: context.getString(R.string.unknown)
+    fun getSkyUIVersion(): String {
+        return buildPropMap[SKYUI_VERSION_PROP] ?: context.getString(R.string.unknown)
     }
     
     fun getBuildDate(): String {
-        val buildDate = buildPropMap[BUILD_DATE_PROP] ?: return context.getString(R.string.unknown)
-        return try {
-            // Parse date like "20251006" to "2025/10/06"
-            if (buildDate.length == 8) {
-                val year = buildDate.substring(0, 4)
-                val month = buildDate.substring(4, 6)
-                val day = buildDate.substring(6, 8)
-                "$year/$month/$day"
-            } else {
-                context.getString(R.string.unknown)
-            }
-        } catch (e: Exception) {
-            context.getString(R.string.unknown)
-        }
+        return getSkyUIVersion()
     }
     
+	// Kompatibilitas sementara untuk kode lama.
+    fun getLichUIVersion(): String {
+        return getSkyUIVersion()
+    }
+	
     fun getVendorBuildVersion(): String {
         return buildPropMap[VENDOR_BUILD_VERSION_PROP] ?: context.getString(R.string.unknown)
     }
