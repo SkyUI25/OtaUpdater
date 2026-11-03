@@ -18,6 +18,7 @@ class UpdatePrefs(context: Context) {
             .putString(KEY_URL, manifestData.url)
             .putString(KEY_CHANGELOG_URL, manifestData.changelogUrl)
             .putString(KEY_VERSION, manifestData.version)
+            .putString(KEY_TYPE, manifestData.type)
             .apply()
     }
 
@@ -29,13 +30,15 @@ class UpdatePrefs(context: Context) {
         val url = prefs.getString(KEY_URL, null) ?: return null
         val changelogUrl = prefs.getString(KEY_CHANGELOG_URL, null) ?: return null
         val version = prefs.getString(KEY_VERSION, null) ?: return null
+        val type = prefs.getString(KEY_TYPE, null) ?: "unknown"
 
         return ManifestData(
             md5 = md5,
             size = size,
             url = url,
             changelogUrl = changelogUrl,
-            version = version
+            version = version,
+            type = type
         )
     }
 
@@ -47,6 +50,7 @@ class UpdatePrefs(context: Context) {
             .remove(KEY_URL)
             .remove(KEY_CHANGELOG_URL)
             .remove(KEY_VERSION)
+            .remove(KEY_TYPE)
             .remove(KEY_CHANGELOG)
             // Clear MD5 state
             .remove(KEY_MD5_ACTIVE)
@@ -160,6 +164,7 @@ class UpdatePrefs(context: Context) {
         private const val KEY_URL = "url"
         private const val KEY_CHANGELOG_URL = "changelog_url"
         private const val KEY_VERSION = "version"
+		private const val KEY_TYPE = "type"
         private const val KEY_CHANGELOG = "changelog"
         private const val KEY_DL_ACTIVE = "dl_active"
         private const val KEY_DL_PERCENT = "dl_percent"

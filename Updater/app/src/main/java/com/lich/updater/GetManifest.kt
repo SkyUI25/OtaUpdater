@@ -15,7 +15,8 @@ data class ManifestData(
     val size: String,
     val url: String,
     val changelogUrl: String,
-    val version: String
+    val version: String,
+    val type: String
 )
 
 sealed class ManifestResult {
@@ -32,7 +33,9 @@ class GetManifest(private val context: Context) {
             "https://raw.githubusercontent.com/SkyUI25/ota_manifest/refs/heads/master/manifest.json"
     }
 
-    suspend fun fetchManifestData(): ManifestResult = withContext(Dispatchers.IO) {
+    suspend fun fetchManifestData(
+        installedVersion: String
+    ): ManifestResult = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
 
         try {
@@ -56,7 +59,7 @@ class GetManifest(private val context: Context) {
                     "Fetched manifest: $response"
                 )
 
-                parseManifestJson(response)
+                parseManifestJson(response, installedVersion)
             } else {
                 ManifestResult.Error
             }
@@ -73,27 +76,53 @@ class GetManifest(private val context: Context) {
 
     private fun getDeviceName(): String {
         return try {
-            val process = Runtime.getRuntime().exec("getprop ro.product.vendor.device")
-            val reader = BufferedReader(InputStreamReader(process.inputStream))
+            val process = Runtime.getRuntime().exec(
+                "getprop ro.product.vendor.device"
+            )
+
+            val reader = BufferedReader(
+                InputStreamReader(process.inputStream)
+            )
+
             val output = reader.readLine()?.trim()
             reader.close()
             process.waitFor()
 
-            if (!output.isNullOrBlank()) output else android.os.Build.DEVICE
+            if (!output.isNullOrBlank()) {
+                output
+            } else {
+                android.os.Build.DEVICE
+            }
         } catch (e: Exception) {
             android.os.Build.DEVICE
         }
     }
 
-    private fun parseManifestJson(jsonString: String): ManifestResult {
+    private fun parseManifestJson(
+        jsonString: String,
+        installedVersion: String
+    ): ManifestResult {
         return try {
+            if (installedVersion.toLongOrNull() == null) {
+                android.util.Log.e(
+                    "GetManifest",
+                    "Invalid installed version: $installedVersion"
+                )
+                return ManifestResult.Error
+            }
+
             val jsonObject = JSONObject(jsonString)
             val responseArray = jsonObject.getJSONArray("response")
-            val currentDevice = getDeviceName()
+            val currentDevice = getDeviceName().trim()
+
+            var deviceFound = false
+
+            val fullCandidates = mutableListOf<ManifestData>()
+            val partialCandidates = mutableListOf<ManifestData>()
 
             android.util.Log.d(
                 "GetManifest",
-                "Current device detected as: '$currentDevice'"
+                "Current device: '$currentDevice', Installed version: '$installedVersion'"
             )
 
             for (i in 0 until responseArray.length()) {
@@ -101,30 +130,116 @@ class GetManifest(private val context: Context) {
 
                 val manifestDevice = item.optString("device").trim()
 
+                val matchesDevice = manifestDevice
+                    .split(Regex("\\s+"))
+                    .any {
+                        it.equals(currentDevice, ignoreCase = true)
+                    }
+
                 android.util.Log.d(
                     "GetManifest",
-                    "Comparing manifest='$manifestDevice' with current='$currentDevice'"
+                    "Checking entry: device='$manifestDevice', type='${item.optString("type")}', version='${item.optString("version")}'"
                 )
 
-                if (manifestDevice.equals(currentDevice.trim(), ignoreCase = true)) {
-                    val manifestData = ManifestData(
-                        md5 = item.getString("md5"),
-                        size = formatSize(item.getLong("size")),
-                        url = item.getString("url"),
-                        changelogUrl = item.getString("changelog"),
-                        version = item.getString("version")
-                    )
+                if (!matchesDevice) {
+                    continue
+                }
 
-                    return ManifestResult.Success(manifestData)
+                deviceFound = true
+
+                
+                val md5 = item.optString("md5")
+                val sizeBytes = item.optLong("size", -1L)
+                val url = item.optString("url")
+                val changelogUrl = item.optString("changelog")
+                val version = item.optString("version")
+                val type = item.optString("type").lowercase()
+
+                if (
+                    md5.isBlank() ||
+                    sizeBytes <= 0L ||
+                    url.isBlank() ||
+                    changelogUrl.isBlank() ||
+                    version.toLongOrNull() == null ||
+                    (type != "full" && type != "partial")
+                ) {
+                    android.util.Log.w(
+                        "GetManifest",
+                        "Skipping invalid manifest entry at index $i"
+                    )
+                    continue
+                }
+
+                val manifestData = ManifestData(
+                    md5 = md5,
+                    size = formatSize(sizeBytes),
+                    url = url,
+                    changelogUrl = changelogUrl,
+                    version = version,
+                    type = type
+                )
+
+                val comparison = compareVersions(
+                    installedVersion,
+                    manifestData.version,
+                    manifestData.type
+                )
+
+                if (comparison != DateComparisonResult.UPDATE_AVAILABLE) {
+                    android.util.Log.d(
+                        "GetManifest",
+                        "Candidate rejected: type=${manifestData.type}, version=${manifestData.version}, result=$comparison"
+                    )
+                    continue
+                }
+
+                when (manifestData.type) {
+                    "full" -> fullCandidates.add(manifestData)
+                    "partial" -> partialCandidates.add(manifestData)
                 }
             }
 
-            android.util.Log.w(
+            if (!deviceFound) {
+                android.util.Log.w(
+                    "GetManifest",
+                    "Device '$currentDevice' is not supported"
+                )
+
+                return ManifestResult.DeviceNotSupported
+            }
+
+            // Full always has priority over Partial.
+            // Select the highest compatible version in each category.
+            val selectedManifest = fullCandidates.maxByOrNull {
+                it.version.toLong()
+            } ?: partialCandidates.maxByOrNull {
+                it.version.toLong()
+            }
+
+            if (selectedManifest == null) {
+                android.util.Log.d(
+                    "GetManifest",
+                    "Device supported, but no compatible update found for $installedVersion"
+                )
+
+                return ManifestResult.Success(
+                    ManifestData(
+                        md5 = "",
+                        size = "",
+                        url = "",
+                        changelogUrl = "",
+                        version = installedVersion,
+                        type = "none"
+                    )
+                )
+            }
+
+            android.util.Log.d(
                 "GetManifest",
-                "Device '$currentDevice' is not supported"
+                "Selected update: type=${selectedManifest.type}, version=${selectedManifest.version}"
             )
 
-            ManifestResult.DeviceNotSupported
+            ManifestResult.Success(selectedManifest)
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -143,7 +258,8 @@ class GetManifest(private val context: Context) {
 
     fun compareVersions(
         installedVersion: String,
-        manifestVersion: String
+        manifestVersion: String,
+        type: String
     ): DateComparisonResult {
         return try {
             val installed = installedVersion.toLongOrNull()
@@ -156,8 +272,21 @@ class GetManifest(private val context: Context) {
                 installed >= available ->
                     DateComparisonResult.UP_TO_DATE
 
-                else ->
+                installedVersion.firstOrNull() != manifestVersion.firstOrNull() ->
+                    DateComparisonResult.DEVICE_NOT_SUPPORTED
+
+                type.equals("partial", ignoreCase = true) ->
+                    if (available - installed == 1L) {
+                        DateComparisonResult.UPDATE_AVAILABLE
+                    } else {
+                        DateComparisonResult.DEVICE_NOT_SUPPORTED
+                    }
+
+                type.equals("full", ignoreCase = true) ->
                     DateComparisonResult.UPDATE_AVAILABLE
+
+                else ->
+                    DateComparisonResult.UNKNOWN
             }
         } catch (e: Exception) {
             e.printStackTrace()

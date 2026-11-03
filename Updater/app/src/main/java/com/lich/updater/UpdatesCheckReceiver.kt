@@ -1,3 +1,4 @@
+
 package com.lich.updater
 
 import android.app.AlarmManager
@@ -11,57 +12,66 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.util.Calendar
 
 class UpdatesCheckReceiver : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "UpdatesCheckReceiver"
-        private const val ACTION_CHECK_UPDATES = "com.lich.updater.ACTION_CHECK_UPDATES"
+        private const val ACTION_CHECK_UPDATES =
+            "com.lich.updater.ACTION_CHECK_UPDATES"
         private const val REQUEST_CODE = 0
 
         fun schedule(context: Context) {
             val updatePrefs = UpdatePrefs(context)
             val intervalHours = updatePrefs.getCheckInterval()
             val intervalMs = intervalHours * 60 * 60 * 1000L
-            
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+            val alarmManager =
+                context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
             val intent = Intent(context, UpdatesCheckReceiver::class.java).apply {
                 action = ACTION_CHECK_UPDATES
             }
+
             val pendingIntent = PendingIntent.getBroadcast(
-                context, 
-                REQUEST_CODE, 
-                intent, 
+                context,
+                REQUEST_CODE,
+                intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
             // Cancel any existing alarm to avoid duplicates
             alarmManager.cancel(pendingIntent)
 
-            // Set repeating alarm
-            // Use setInexactRepeating for battery efficiency
+            // Schedule repeating check
             alarmManager.setInexactRepeating(
                 AlarmManager.RTC_WAKEUP,
                 System.currentTimeMillis() + intervalMs,
                 intervalMs,
                 pendingIntent
             )
-            
-            Log.d(TAG, "Scheduled background update check every $intervalHours hours")
+
+            Log.d(
+                TAG,
+                "Scheduled background update check every $intervalHours hours"
+            )
         }
 
         fun cancel(context: Context) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val alarmManager =
+                context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
             val intent = Intent(context, UpdatesCheckReceiver::class.java).apply {
                 action = ACTION_CHECK_UPDATES
             }
+
             val pendingIntent = PendingIntent.getBroadcast(
-                context, 
-                REQUEST_CODE, 
-                intent, 
+                context,
+                REQUEST_CODE,
+                intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
+
             alarmManager.cancel(pendingIntent)
             Log.d(TAG, "Canceled background update check")
         }
@@ -81,88 +91,112 @@ class UpdatesCheckReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun checkUpdates(context: Context, pendingResult: PendingResult) {
+    private fun checkUpdates(
+        context: Context,
+        pendingResult: PendingResult
+    ) {
         val updatePrefs = UpdatePrefs(context)
-        
-        // 1. Check if notifications are enabled
+
+        // 1. Check notification settings
         if (!updatePrefs.isUpdateNotificationsEnabled()) {
             Log.d(TAG, "Notifications disabled, skipping check")
             pendingResult.finish()
             return
         }
 
-        // 2. Check Connectivity
+        // 2. Check connectivity
         if (!isNetworkAvailable(context)) {
             Log.d(TAG, "No network, skipping check")
             pendingResult.finish()
             return
         }
 
-        // 3. Perform Check
+        // 3. Perform ROM and app update checks
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 Log.d(TAG, "Checking for updates...")
 
-                val manifestResult = GetManifest(context).fetchManifestData()
+                val currentSkyUIVersion =
+                    BuildPropReader(context).getSkyUIVersion()
+
+                val manifestResult =
+                    GetManifest(context).fetchManifestData(currentSkyUIVersion)
 
                 when (manifestResult) {
                     is ManifestResult.Success -> {
                         val manifestData = manifestResult.data
-                        val currentSkyUIVersion =
-                            BuildPropReader(context).getSkyUIVersion()
 
-                        val comparison = GetManifest(context).compareVersions(
-                            currentSkyUIVersion,
-                            manifestData.version
-                        )
-
-                        if (comparison == DateComparisonResult.UPDATE_AVAILABLE) {
-                             val savedData = updatePrefs.getSavedManifestData()
-
-                            if (savedData == null ||
-                                savedData.version != manifestData.version
-                            ) {
-                                updatePrefs.saveManifestData(manifestData)
-
-                                com.lich.updater.Notifications.UpdateAvailable(context)
-                                    .show(manifestData.version)
-
-                                Log.d(
-                                    TAG,
-                                    "Update found: Installed=$currentSkyUIVersion Available=${manifestData.version}"
-                                )
-                            }
-                        } else {
+                        if (manifestData.type == "none") {
                             Log.d(
                                 TAG,
-                                "No update available. Current version: $currentSkyUIVersion"
+                                "Device supported, but no compatible update found."
                             )
+                        } else {
+                            val comparison = GetManifest(context).compareVersions(
+                                currentSkyUIVersion,
+                                manifestData.version,
+                                manifestData.type
+                            )
+
+                            if (comparison == DateComparisonResult.UPDATE_AVAILABLE) {
+                                val savedData = updatePrefs.getSavedManifestData()
+
+                                if (savedData == null ||
+                                    savedData.version != manifestData.version ||
+                                    savedData.type != manifestData.type
+                                ) {
+                                    updatePrefs.saveManifestData(manifestData)
+
+                                    com.lich.updater.Notifications.UpdateAvailable(context)
+                                        .show(manifestData.version)
+
+                                    Log.d(
+                                        TAG,
+                                        "Update found: Installed=$currentSkyUIVersion Available=${manifestData.version} Type=${manifestData.type}"
+                                    )
+                                }
+                            } else {
+                                Log.d(
+                                    TAG,
+                                    "No update available. Current version: $currentSkyUIVersion"
+                                )
+                            }
                         }
                     }
 
                     ManifestResult.DeviceNotSupported -> {
-                        Log.w(TAG, "Device is not supported. Skipping ROM update notification.")
+                        Log.w(
+                            TAG,
+                            "Device is not supported. Skipping ROM update notification."
+                        )
                         updatePrefs.clearUpdate()
                     }
 
                     ManifestResult.NoInternet -> {
-                        Log.w(TAG, "Unable to check ROM updates: No internet")
+                        Log.w(
+                            TAG,
+                            "Unable to check ROM updates: No internet"
+                        )
                     }
 
                     ManifestResult.Error -> {
-                        Log.e(TAG, "Unable to check ROM updates: Manifest error")
+                        Log.e(
+                            TAG,
+                            "Unable to check ROM updates: Manifest error"
+                        )
                     }
                 }
 
-                // 4. Also check for App Updates
-                val appUpdateInfo = AppUpdateChecker(context).checkForAppUpdate()
+                // 4. Also check for app updates
+                val appUpdateInfo =
+                    AppUpdateChecker(context).checkForAppUpdate()
 
                 if (appUpdateInfo != null && appUpdateInfo.isUpdateAvailable) {
                     com.lich.updater.Notifications.AppUpdateNotification(context)
                         .show(appUpdateInfo.tagName)
 
                     Log.d(
-                       TAG,
+                        TAG,
                         "App Update found and notified: ${appUpdateInfo.tagName}"
                     )
                 }
@@ -176,9 +210,15 @@ class UpdatesCheckReceiver : BroadcastReceiver() {
     }
 
     private fun isNetworkAvailable(context: Context): Boolean {
-        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val cm = context.getSystemService(
+            Context.CONNECTIVITY_SERVICE
+        ) as ConnectivityManager
+
         val network = cm.activeNetwork ?: return false
         val caps = cm.getNetworkCapabilities(network) ?: return false
-        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+
+        return caps.hasCapability(
+            NetworkCapabilities.NET_CAPABILITY_INTERNET
+        )
     }
 }

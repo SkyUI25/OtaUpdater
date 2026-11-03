@@ -398,46 +398,60 @@ class MainActivity : AppCompatActivity() {
     fun playRomUpdateAnimation() {
     }
     
+    
     private fun checkForUpdates() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val buildPropReader = BuildPropReader(this@MainActivity)
                 val skyUIVersion = buildPropReader.getSkyUIVersion()
 
-                val manifestResult = getManifest.fetchManifestData()
+                val manifestResult =
+                    getManifest.fetchManifestData(skyUIVersion)
 
                 when (manifestResult) {
                     is ManifestResult.Success -> {
                         val manifestData = manifestResult.data
 
-                        if (skyUIVersion != getString(R.string.unknown)) {
-                            val comparisonResult = getManifest.compareVersions(
-                                skyUIVersion,
-                                manifestData.version
-                            )
+                        if (skyUIVersion == getString(R.string.unknown)) {
+                            updateUIForComparison(DateComparisonResult.UNKNOWN)
+                            return@launch
+                        }
 
+                        if (manifestData.type == "none") {
                             val lastCheckTime = getFormattedCurrentTime()
                             updatePrefs.saveLastCheckTime(lastCheckTime)
 
-                            updateUIForComparison(comparisonResult, manifestData)
+                            updateUIForComparison(DateComparisonResult.UP_TO_DATE)
+                            return@launch
+                        }
 
-                            when (comparisonResult) {
-                                DateComparisonResult.UPDATE_AVAILABLE ->
-                                    updatePrefs.saveManifestData(manifestData)
+                        val comparisonResult = getManifest.compareVersions(
+                            skyUIVersion,
+                            manifestData.version,
+                            manifestData.type
+                        )
 
-                                DateComparisonResult.UP_TO_DATE ->
-                                    updatePrefs.clearUpdate()
+                        val lastCheckTime = getFormattedCurrentTime()
+                        updatePrefs.saveLastCheckTime(lastCheckTime)
 
-                                else -> {}
-                            }
-                        } else {
-                            updateUIForComparison(DateComparisonResult.UNKNOWN)
+                        updateUIForComparison(comparisonResult, manifestData)
+
+                        when (comparisonResult) {
+                            DateComparisonResult.UPDATE_AVAILABLE ->
+                                updatePrefs.saveManifestData(manifestData)
+
+                            DateComparisonResult.UP_TO_DATE ->
+                                updatePrefs.clearUpdate()
+
+                            else -> {}
                         }
                     }
 
                     ManifestResult.DeviceNotSupported -> {
-					    updatePrefs.clearUpdate()
-                        updateUIForComparison(DateComparisonResult.DEVICE_NOT_SUPPORTED)
+                        updatePrefs.clearUpdate()
+                        updateUIForComparison(
+                            DateComparisonResult.DEVICE_NOT_SUPPORTED
+                        )
                     }
 
                     ManifestResult.NoInternet -> {
@@ -454,7 +468,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    
+ 
     private fun updateUIForComparison(result: DateComparisonResult, manifestData: ManifestData? = null, allowFetchChangelog: Boolean = true) {
         var finalResult = result
         
@@ -562,6 +576,7 @@ class MainActivity : AppCompatActivity() {
         return "Last checked: ${sdf.format(Date())}"
     }
     
+    
     fun checkForUpdatesWithProgress() {
         CoroutineScope(Dispatchers.Main).launch {
             startBlinkingAnimation(getString(R.string.checking_for_updates))
@@ -572,40 +587,53 @@ class MainActivity : AppCompatActivity() {
                 val buildPropReader = BuildPropReader(this@MainActivity)
                 val skyUIVersion = buildPropReader.getSkyUIVersion()
 
-                val manifestResult = getManifest.fetchManifestData()
+                val manifestResult =
+                    getManifest.fetchManifestData(skyUIVersion)
 
                 when (manifestResult) {
                     is ManifestResult.Success -> {
                         val manifestData = manifestResult.data
 
-                        if (skyUIVersion != getString(R.string.unknown)) {
-                            val comparisonResult = getManifest.compareVersions(
-                                skyUIVersion,
-                                manifestData.version
-                            )
+                        if (skyUIVersion == getString(R.string.unknown)) {
+                            updateUIForComparison(DateComparisonResult.UNKNOWN)
+                            return@launch
+                        }
 
+                        if (manifestData.type == "none") {
                             val lastCheckTime = getFormattedCurrentTime()
                             updatePrefs.saveLastCheckTime(lastCheckTime)
 
-                            updateUIForComparison(comparisonResult, manifestData)
+                            updateUIForComparison(DateComparisonResult.UP_TO_DATE)
+                            return@launch
+                        }
 
-                            when (comparisonResult) {
-                                DateComparisonResult.UPDATE_AVAILABLE ->
-                                    updatePrefs.saveManifestData(manifestData)
+                        val comparisonResult = getManifest.compareVersions(
+                            skyUIVersion,
+                            manifestData.version,
+                            manifestData.type
+                        )
 
-                                DateComparisonResult.UP_TO_DATE ->
-                                    updatePrefs.clearUpdate()
+                        val lastCheckTime = getFormattedCurrentTime()
+                        updatePrefs.saveLastCheckTime(lastCheckTime)
 
-                                else -> {}
-                            }
-                        } else {
-                            updateUIForComparison(DateComparisonResult.UNKNOWN)
+                        updateUIForComparison(comparisonResult, manifestData)
+
+                        when (comparisonResult) {
+                            DateComparisonResult.UPDATE_AVAILABLE ->
+                                updatePrefs.saveManifestData(manifestData)
+
+                            DateComparisonResult.UP_TO_DATE ->
+                                updatePrefs.clearUpdate()
+
+                            else -> {}
                         }
                     }
 
                     ManifestResult.DeviceNotSupported -> {
-					    updatePrefs.clearUpdate()
-                        updateUIForComparison(DateComparisonResult.DEVICE_NOT_SUPPORTED)
+                        updatePrefs.clearUpdate()
+                        updateUIForComparison(
+                            DateComparisonResult.DEVICE_NOT_SUPPORTED
+                        )
                     }
 
                     ManifestResult.NoInternet -> {
@@ -624,6 +652,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
     
     private fun showProgressBar(show: Boolean) {
         // Obsolete: progress bar removed in favor of blinking text
