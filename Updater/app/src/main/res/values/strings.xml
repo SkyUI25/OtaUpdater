@@ -12,7 +12,7 @@
     <string name="build_date">Build date</string>
     <string name="new_build_date">Build date</string>
     <string name="size_rom">Size</string>
-    <string name="new_version_rom">Rom version</string>
+    <string name="new_version_rom">Rom Version</string>
     <string name="unknown">Unknown</string>
     <!-- Update Status -->
     <string name="new_version">New Version</string>
