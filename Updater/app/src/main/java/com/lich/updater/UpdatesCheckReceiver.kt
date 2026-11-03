@@ -148,7 +148,7 @@ class UpdatesCheckReceiver : BroadcastReceiver() {
                                     updatePrefs.saveManifestData(manifestData)
 
                                     com.lich.updater.Notifications.UpdateAvailable(context)
-                                        .show(manifestData.version)
+                                        .show(formatVersion(manifestData.version))
 
                                     Log.d(
                                         TAG,

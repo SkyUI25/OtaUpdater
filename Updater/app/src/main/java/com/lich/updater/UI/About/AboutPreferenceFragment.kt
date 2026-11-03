@@ -8,6 +8,7 @@ import androidx.core.net.toUri
 import androidx.preference.PreferenceFragmentCompat
 import com.lich.updater.BuildPropReader
 import com.lich.updater.R
+import com.lich.updater.formatVersion
 
 class AboutPreferenceFragment : PreferenceFragmentCompat() {
     
@@ -32,7 +33,7 @@ class AboutPreferenceFragment : PreferenceFragmentCompat() {
         
          // Update SkyUI version
         findPreference<androidx.preference.Preference>(getString(R.string.lichui_version))?.summary = 
-            buildPropReader.getSkyUIVersion()
+            formatVersion(buildPropReader.getSkyUIVersion())
     }
     
     private fun setupDeveloperClickListeners() {

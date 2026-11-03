@@ -26,6 +26,22 @@ sealed class ManifestResult {
     object Error : ManifestResult()
 }
 
+fun formatVersion(version: String): String {
+    if (version.length != 6 || !version.all { it.isDigit() }) {
+        return version
+    }
+
+    val major = version.substring(0, 2).toInt()
+    val minor = version.substring(2, 4).toInt()
+    val patch = version.substring(4, 6).toInt()
+
+    return when {
+        patch != 0 -> "$major.$minor.$patch"
+        minor != 0 -> "$major.$minor"
+        else -> "$major"
+    }
+}
+
 class GetManifest(private val context: Context) {
 
     companion object {
@@ -256,6 +272,7 @@ class GetManifest(private val context: Context) {
         }
     }
 
+    
     fun compareVersions(
         installedVersion: String,
         manifestVersion: String,
@@ -269,10 +286,18 @@ class GetManifest(private val context: Context) {
                 installed == null || available == null ->
                     DateComparisonResult.UNKNOWN
 
+                installedVersion.length != 6 ||
+                manifestVersion.length != 6 ->
+                    DateComparisonResult.UNKNOWN
+
+                !installedVersion.all { it.isDigit() } ||
+                !manifestVersion.all { it.isDigit() } ->
+                    DateComparisonResult.UNKNOWN
+
                 installed >= available ->
                     DateComparisonResult.UP_TO_DATE
 
-                installedVersion.firstOrNull() != manifestVersion.firstOrNull() ->
+                installedVersion.take(2) != manifestVersion.take(2) ->
                     DateComparisonResult.DEVICE_NOT_SUPPORTED
 
                 type.equals("partial", ignoreCase = true) ->

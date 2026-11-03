@@ -102,7 +102,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val kv = findPreference<CurrentVersionKeyValuePreference>("current_version_info")
 
         kv?.oneUiValue = buildPropReader.getOneUIVersion()
-        kv?.skyUiValue = buildPropReader.getSkyUIVersion()
+        kv?.skyUiValue = formatVersion(buildPropReader.getSkyUIVersion())
     }
 
     private fun updateNewVersionSummaries() {
@@ -140,12 +140,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         if (isShowingNewVersion) {
             val kv = findPreference<NewVersionKeyValuePreference>("new_version_info")
 
-            kv?.versionValue = manifestData.version
+            kv?.versionValue = formatVersion(manifestData.version)
             kv?.sizeValue = manifestData.size.toString()
 
             updateStatusText(
                 getString(R.string.new_update_available),
-                subtitle = "ROM version ${manifestData.version}"
+                subtitle = "ROM version ${formatVersion(manifestData.version)}"
             )
 
             val currentChangelog = updatePrefs.getSavedChangelog() ?: ""
@@ -170,7 +170,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val manifest = updatePrefs.getSavedManifestData()
 
         val formattedContent = if (isShowingNewVersion && manifest != null) {
-            "• Version: ${manifest.version}\n• Size: ${manifest.size}\n$changelogText"
+            "• Version: ${formatVersion(manifest.version)}\n• Size: ${manifest.size}\n$changelogText"
         } else {
             changelogText
         }

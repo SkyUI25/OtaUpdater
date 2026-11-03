@@ -20,6 +20,7 @@ import kotlinx.coroutines.withContext
 import android.widget.Toast
 import com.lich.updater.AppUpdateChecker
 import com.lich.updater.AppUpdateDownloader
+import com.lich.updater.formatVersion
 
 class SettingsPreferenceFragment : PreferenceFragmentCompat() {
     
@@ -65,7 +66,7 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         
         // Update SkyUI version
         findPreference<androidx.preference.Preference>(getString(R.string.skyui_version))?.summary = 
-            buildPropReader.getSkyUIVersion()
+            formatVersion(buildPropReader.getSkyUIVersion())
     }
     
     private fun setupAboutPreference() {

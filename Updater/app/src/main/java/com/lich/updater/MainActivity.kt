@@ -524,7 +524,7 @@ class MainActivity : AppCompatActivity() {
             // Only rely on the actual install status
             if (installStatus == UpdatePrefs.INSTALL_STATUS_READY) {
                 // If already verified or ready to install, show "Ready" state
-                getSettingsFragment()?.updateStatusText(getString(R.string.install_ready), subtitle = if (manifestData != null) "Rom version ${manifestData.version}" else "")
+                getSettingsFragment()?.updateStatusText(getString(R.string.install_ready), subtitle = if (manifestData != null) "Rom version ${formatVersion(manifestData.version)}" else "")
                 showDownloadButton(true)
                 setInstallButton()
                 return
@@ -548,7 +548,7 @@ class MainActivity : AppCompatActivity() {
                 getSettingsFragment()?.updateStatusText(
                     getString(R.string.new_update_available),
                     subtitle = if (manifestData != null) {
-                       "Rom version ${manifestData.version}"
+                       "Rom version ${formatVersion(manifestData.version)}"
                     } else {
                        ""
                     }
