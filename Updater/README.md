@@ -149,15 +149,13 @@ The `manifest.json` file hosted at `MANIFEST_URL` must conform to the following 
 {
   "response": [
     {
-      "device": "a54x",
-      "builddate": 20260528,
+      "device": "m21 m31 m31s f41 a51",
+      "type": "partial",
       "md5": "c9230270f98419433c0be38c46687c85",
-      "patch": 20260405,
       "size": 7121828064,
-      "bl": "XXUFEYI4",
-      "url": "https://pixeldrain.com/api/file/[id]?download",
-      "changelog": "https://raw.githubusercontent.com/MrDemonc/PROJECT-LichUI/refs/heads/Updates/changelog.txt",
-      "version": "5.2.9"
+      "url": "https://example.com/skyui_update.zip",
+      "changelog": "https://raw.githubusercontent.com/SkyUI25/ota_manifest/master/changelog.txt",
+      "version": "900002"
     }
   ]
 }

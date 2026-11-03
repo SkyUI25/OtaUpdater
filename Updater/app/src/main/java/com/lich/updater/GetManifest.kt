@@ -1,3 +1,4 @@
+
 package com.lich.updater
 
 import android.content.Context
@@ -11,7 +12,6 @@ import java.net.URL
 
 data class ManifestData(
     val md5: String,
-    val patch: String,
     val size: String,
     val url: String,
     val changelogUrl: String,
@@ -42,19 +42,19 @@ class GetManifest(private val context: Context) {
             connection.requestMethod = "GET"
             connection.connectTimeout = 10000
             connection.readTimeout = 10000
-			connection.useCaches = false
-			connection.setRequestProperty("Cache-Control", "no-cache")
-			connection.setRequestProperty("Pragma", "no-cache")
+            connection.useCaches = false
+            connection.setRequestProperty("Cache-Control", "no-cache")
+            connection.setRequestProperty("Pragma", "no-cache")
 
             if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                 val response = connection.inputStream.bufferedReader().use {
                     it.readText()
                 }
-				
-				android.util.Log.d(
-    "GetManifest",
-    "Fetched manifest: $response"
-)
+
+                android.util.Log.d(
+                    "GetManifest",
+                    "Fetched manifest: $response"
+                )
 
                 parseManifestJson(response)
             } else {
@@ -101,15 +101,14 @@ class GetManifest(private val context: Context) {
 
                 val manifestDevice = item.optString("device").trim()
 
-android.util.Log.d(
-    "GetManifest",
-    "Comparing manifest='$manifestDevice' with current='$currentDevice'"
-)
+                android.util.Log.d(
+                    "GetManifest",
+                    "Comparing manifest='$manifestDevice' with current='$currentDevice'"
+                )
 
-if (manifestDevice.equals(currentDevice.trim(), ignoreCase = true)) {
+                if (manifestDevice.equals(currentDevice.trim(), ignoreCase = true)) {
                     val manifestData = ManifestData(
                         md5 = item.getString("md5"),
-                        patch = formatPatchDate(item.getInt("patch")),
                         size = formatSize(item.getLong("size")),
                         url = item.getString("url"),
                         changelogUrl = item.getString("changelog"),
@@ -130,24 +129,6 @@ if (manifestDevice.equals(currentDevice.trim(), ignoreCase = true)) {
         } catch (e: Exception) {
             e.printStackTrace()
             ManifestResult.Error
-        }
-    }
-
-    private fun formatPatchDate(dateInt: Int): String {
-        return try {
-            val dateString = dateInt.toString()
-
-            if (dateString.length == 8) {
-                val year = dateString.substring(0, 4)
-                val month = dateString.substring(4, 6)
-                val day = dateString.substring(6, 8)
-
-                "$year/$month/$day"
-            } else {
-                context.getString(R.string.unknown)
-            }
-        } catch (e: Exception) {
-            context.getString(R.string.unknown)
         }
     }
 
@@ -188,7 +169,7 @@ if (manifestDevice.equals(currentDevice.trim(), ignoreCase = true)) {
 enum class DateComparisonResult {
     UP_TO_DATE,
     UPDATE_AVAILABLE,
-	DEVICE_NOT_SUPPORTED,
+    DEVICE_NOT_SUPPORTED,
     UNKNOWN,
     NO_INTERNET
 }
